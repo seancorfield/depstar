@@ -16,7 +16,7 @@
         :args (s/cat :f ::filename
                      :i #(instance? java.io.InputStream %)
                      :target ::path
-                     :last-mod (s/? inst?)))
+                     :last-mod inst?))
 
 (s/fdef u/consume-jar
         :args (s/cat :p ::path
