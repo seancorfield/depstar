@@ -19,6 +19,12 @@
 
 (defonce ^FileSystem FS (FileSystems/getDefault))
 
+;; could add (StandardOpenOption/valueOf "SYNC") here as well but that
+;; could slow things down (and hasn't yet proved to be necessary)
+(def open-opts (into-array OpenOption [(StandardOpenOption/valueOf "CREATE")]))
+
+(def copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
+
 (defn path
   ^Path [s]
   (.getPath FS s (make-array String 0)))
@@ -48,7 +54,7 @@
         ;; read and then close target since we will rewrite it
         f2 (with-open [r (PushbackReader. (Files/newBufferedReader target))]
              (edn/read r))]
-    (with-open [w (Files/newBufferedWriter target (make-array OpenOption 0))]
+    (with-open [w (Files/newBufferedWriter target open-opts)]
       (binding [*out* w]
         (prn (merge f1 f2))))))
 
@@ -57,7 +63,7 @@
   [_ in target]
   (let [f1 (line-seq (jio/reader in))
         f2 (Files/readAllLines target)]
-    (with-open [w (Files/newBufferedWriter target (make-array OpenOption 0))]
+    (with-open [w (Files/newBufferedWriter target open-opts)]
       (binding [*out* w]
         (run! println (-> (vec f1)
                           (conj "\n")
@@ -89,7 +95,7 @@
     (if (Files/exists target (make-array LinkOption 0))
       (clash filename in target)
       (do
-        (Files/copy in target ^"[Ljava.nio.file.CopyOption;" (make-array CopyOption 0))
+        (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
         (when last-mod
           (Files/setLastModifiedTime target last-mod))))
     (when *debug*
@@ -138,7 +144,11 @@
           (if (.isDirectory entry)
             (Files/createDirectories target (make-array FileAttribute 0))
             (do (Files/createDirectories (.getParent target) (make-array FileAttribute 0))
-                (copy! name inputstream target last-mod))))))))
+              (try
+                (copy! name inputstream target last-mod)
+                (catch Throwable t
+                  (println "Unable to copy:" name)
+                  (println (class t) (ex-message t)))))))))))
 
 (defn copy-directory
   [^Path src ^Path dest]
@@ -176,7 +186,7 @@
 (defn write-jar
   [^Path src ^Path target]
   (with-open [os (-> target
-                     (Files/newOutputStream (make-array OpenOption 0))
+                     (Files/newOutputStream open-opts)
                      JarOutputStream.)]
     (let [walker (reify FileVisitor
                    (visitFile [_ p attrs]
