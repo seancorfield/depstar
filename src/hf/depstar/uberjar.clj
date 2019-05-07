@@ -25,6 +25,8 @@
 
 (def copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
 
+(defonce errors (atom 0))
+
 (defn path
   ^Path [s]
   (.getPath FS s (make-array String 0)))
@@ -147,8 +149,11 @@
               (try
                 (copy! name inputstream target last-mod)
                 (catch Throwable t
-                  (println "Unable to copy:" name)
-                  (println (class t) (ex-message t)))))))))))
+                  (prn {:error "unable to copy file"
+                        :name name
+                        :exception (class t)
+                        :message (ex-message t)})
+                  (swap! errors inc))))))))))
 
 (defn copy-directory
   [^Path src ^Path dest]
@@ -235,10 +240,14 @@
   [{:keys [dest jar] :or {jar :uber} :as options}]
   (let [tmp (Files/createTempDirectory "uberjar" (make-array FileAttribute 0))
         cp (into [] (remove depstar-itself?) (current-classpath))]
+    (reset! errors 0)
     (binding [*debug* (debug-level)]
       (run! #(copy-source % tmp options) cp))
     (println "Writing" (name jar) "jar:" dest)
-    (write-jar tmp (path dest))))
+    (write-jar tmp (path dest))
+    (when (pos? @errors)
+      (println "\nCompleted with errors!")
+      (System/exit 1))))
 
 (defn -main
   [destination]
