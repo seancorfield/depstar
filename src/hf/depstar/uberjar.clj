@@ -1,21 +1,36 @@
 (ns hf.depstar.uberjar
   (:require [clojure.edn :as edn]
-            [clojure.java.io :as jio])
-  (:import [java.io InputStream OutputStream PushbackReader]
+            [clojure.java.io :as jio]
+            [clojure.string :as str])
+  (:import [java.io InputStream PushbackReader]
            [java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
                           FileSystem FileSystems Files
                           FileVisitResult FileVisitor
                           Path]
-           [java.nio.file.attribute BasicFileAttributes FileAttribute]
-           [java.util.jar JarInputStream JarOutputStream JarEntry]))
+           [java.nio.file.attribute FileAttribute]
+           [java.util.jar JarInputStream JarEntry]))
 
-;; future:
-;; other knobs?
-;; clj -M options?
-;; look into MANIFEST entries
+(set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *debug* nil)
+
+(defn env-prop
+  "Given a setting name, get its Boolean value from the environment,
+  validate it, and return the value (or nil if no setting is present)."
+  [setting]
+  (let [env-setting  (str "DEPSTAR_" (str/upper-case setting))
+        prop-setting (str "depstar." (str/lower-case setting))]
+    (when-let [level (or (System/getenv env-setting)
+                         (System/getProperty prop-setting))]
+      (case level
+        "true"  true
+        "false" false ;; because (if (Boolean. "false") :is-truthy :argh!)
+        (throw (ex-info (str "depstar " setting
+                             " should be true or false")
+                        {:level    level
+                         :env      (System/getenv env-setting)
+                         :property (System/getProperty prop-setting)}))))))
 
 (defonce ^FileSystem FS (FileSystems/getDefault))
 
@@ -73,8 +88,9 @@
 
 (defmethod clash
   :default
-  [_ in target])
+  [_ in target]
   ;; do nothing, first file wins
+  nil)
 
 (def ^:private exclude-patterns
   "Filename patterns to exclude. These are checked with re-matches and
@@ -92,7 +108,7 @@
 
 (defn copy!
   ;; filename drives strategy
-  [filename ^InputStream in ^Path target & [last-mod]]
+  [filename ^InputStream in ^Path target last-mod]
   (if-not (excluded? filename)
     (if (Files/exists target (make-array LinkOption 0))
       (clash filename in target)
@@ -160,12 +176,13 @@
   (let [copy-dir
         (reify FileVisitor
           (visitFile [_ p attrs]
-            (let [f (.relativize src p)]
+            (let [f (.relativize src p)
+                  last-mod (Files/getLastModifiedTime p (make-array LinkOption 0))]
               (with-open [is (Files/newInputStream p (make-array OpenOption 0))]
-                (copy! (.toString f) is (.resolve dest f))))
+                (copy! (.toString f) is (.resolve dest (.toString f)) last-mod)))
             FileVisitResult/CONTINUE)
           (preVisitDirectory [_ p attrs]
-            (Files/createDirectories (.resolve dest (.relativize src p))
+            (Files/createDirectories (.resolve dest (.toString (.relativize src p)))
                                      (make-array FileAttribute 0))
             FileVisitResult/CONTINUE)
           (postVisitDirectory [_ p ioexc]
@@ -188,28 +205,6 @@
   [src dest options]
   (copy-source* src dest options))
 
-(defn write-jar
-  [^Path src ^Path target]
-  (with-open [os (-> target
-                     (Files/newOutputStream open-opts)
-                     JarOutputStream.)]
-    (let [walker (reify FileVisitor
-                   (visitFile [_ p attrs]
-                     (let [t (.lastModifiedTime attrs)
-                           e (JarEntry. (.toString (.relativize src p)))]
-                       (.putNextEntry os (.setLastModifiedTime e t)))
-                     (Files/copy p os)
-                     FileVisitResult/CONTINUE)
-                   (preVisitDirectory [_ p attrs]
-                     (when (not= src p) ;; don't insert "/" to zip
-                       (.putNextEntry os (JarEntry. (str (.relativize src p) "/")))) ;; directories must end in /
-                     FileVisitResult/CONTINUE)
-                   (postVisitDirectory [_ p ioexc]
-                     (if ioexc (throw ioexc) FileVisitResult/CONTINUE))
-                   (visitFileFailed [_ p ioexc] (throw ioexc)))]
-      (Files/walkFileTree src walker)))
-  :ok)
-
 (defn current-classpath
   []
   (vec (.split ^String
@@ -220,31 +215,25 @@
   [p]
   (re-find #"depstar" p))
 
-(defn- debug-level
-  "Return the requested debug level:
-  * if DEPSTAR_DEBUG env var is set, use that,
-  * else if depstar.debug system property is set, use that.
-  For now, we just treat this as a Boolean (true|false)."
-  []
-  (when-let [level (or (System/getenv "DEPSTAR_DEBUG")
-                       (System/getProperty "depstar.debug"))]
-    (case level
-      "true"  true
-      "false" false ;; because (if (Boolean. "false") :is-truthy :argh!)
-      (throw (ex-info "depstar debug should be true or false"
-                      {:level    level
-                       :env      (System/getenv "DEPSTAR_DEBUG")
-                       :property (System/getProperty "depstar.debug")})))))
-
 (defn run
   [{:keys [dest jar] :or {jar :uber} :as options}]
-  (let [tmp (Files/createTempDirectory "uberjar" (make-array FileAttribute 0))
-        cp (into [] (remove depstar-itself?) (current-classpath))]
-    (reset! errors 0)
-    (binding [*debug* (debug-level)]
-      (run! #(copy-source % tmp options) cp))
-    (println "Writing" (name jar) "jar:" dest)
-    (write-jar tmp (path dest))
+  (let [cp       (into [] (remove depstar-itself?) (current-classpath))
+        tmp-dir  (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
+        jar-path (.resolve tmp-dir ^String dest)
+        jar-file (java.net.URI. (str "jar:" (.toUri jar-path)))
+        zip-opts (doto (java.util.HashMap.)
+                       (.put "create" "true")
+                       (.put "encoding" "UTF-8"))]
+
+    (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
+      (let [tmp (.getPath zfs "/" (make-array String 0))]
+        (reset! errors 0)
+        (println "Building" (name jar) "jar:" dest)
+        (binding [*debug* (env-prop "debug")]
+          (run! #(copy-source % tmp options) cp))))
+
+    (Files/move jar-path (path dest) copy-opts)
+
     (when (pos? @errors)
       (println "\nCompleted with errors!")
       (System/exit 1))))
