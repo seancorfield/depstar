@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.2.0"}}}}
+                 {seancorfield/depstar {:mvn/version "0.2.1"}}}}
 }
 ```
 
@@ -51,6 +51,7 @@ java -cp MyProject.jar clojure.main -m project.core
 
 # Changes
 
+* 0.2.1 -- May 08, 2019 -- Fix #9 by creating parent directories for target JAR file (PR #10 @jarohen).
 * 0.2.0 -- May 07, 2019 -- Fix #8 by switching to ZipFileSystem and performing a single copy pass (instead of copying to temporary folder tree and then building a zip file).
 * 0.1.7 -- Apr 24, 2019 -- Fix #6 by excluding `*.pom` files; Fix #7 by excluding `module-info.class` files; lists excluded files if debugging enabled.
 * 0.1.6 -- Mar 10, 2019 -- Fix for JARs containing `data_readers.clj` (do not close input stream!); supports `-Ddepstar.debug=true` and `DEPSTAR_DEBUG=true` to be more verbose.
