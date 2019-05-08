@@ -219,7 +219,8 @@
   [{:keys [dest jar] :or {jar :uber} :as options}]
   (let [cp       (into [] (remove depstar-itself?) (current-classpath))
         tmp-dir  (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
-        jar-path (.resolve tmp-dir ^String dest)
+        jar-path (doto (.resolve tmp-dir ^String dest)
+                   (.. getParent toFile mkdirs))
         jar-file (java.net.URI. (str "jar:" (.toUri jar-path)))
         zip-opts (doto (java.util.HashMap.)
                        (.put "create" "true")
