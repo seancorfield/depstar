@@ -14,6 +14,7 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *debug* nil)
+(def ^:dynamic ^:private *verbose* nil)
 
 (defn env-prop
   "Given a setting name, get its Boolean value from the environment,
@@ -154,6 +155,7 @@
   :jar
   [src dest options]
   (when-not (= :thin (:jar options))
+    (when *verbose* (println src))
     (consume-jar (path src)
       (fn [inputstream ^JarEntry entry]
         (let [name (.getName entry)
@@ -178,6 +180,7 @@
           (visitFile [_ p attrs]
             (let [f (.relativize src p)
                   last-mod (Files/getLastModifiedTime p (make-array LinkOption 0))]
+              (when *verbose* (println (str (.toString src) "/" (.toString f))))
               (with-open [is (Files/newInputStream p (make-array OpenOption 0))]
                 (copy! (.toString f) is (.resolve dest (.toString f)) last-mod)))
             FileVisitResult/CONTINUE)
@@ -194,6 +197,7 @@
 (defmethod copy-source*
   :directory
   [src dest options]
+  (when *verbose* (println src))
   (copy-directory (path src) dest))
 
 (defmethod copy-source*
@@ -216,7 +220,7 @@
   (re-find #"depstar" p))
 
 (defn run
-  [{:keys [dest jar] :or {jar :uber} :as options}]
+  [{:keys [dest jar verbose] :or {jar :uber} :as options}]
   (let [cp       (into [] (remove depstar-itself?) (current-classpath))
         tmp-dir  (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
         jar-path (doto (.resolve tmp-dir ^String dest)
@@ -230,7 +234,8 @@
       (let [tmp (.getPath zfs "/" (make-array String 0))]
         (reset! errors 0)
         (println "Building" (name jar) "jar:" dest)
-        (binding [*debug* (env-prop "debug")]
+        (binding [*debug* (env-prop "debug")
+                  *verbose* verbose]
           (run! #(copy-source % tmp options) cp))))
 
     (let [dest-path (path dest)]
@@ -242,5 +247,8 @@
       (System/exit 1))))
 
 (defn -main
-  [destination]
-  (run {:dest destination}))
+  [destination & [verbose]]
+  (when verbose
+    (when-not (#{"-v" "--verbose"} verbose)
+      (throw (ex-info "Expected -v or --verbose option" {:option verbose}))))
+  (run {:dest destination :verbose verbose}))

@@ -28,6 +28,8 @@ Create a (library) jar by invoking `depstar` with the desired jar name:
 clojure -A:depstar -m hf.depstar.jar MyLib.jar
 ```
 
+If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` after the JAR filename.
+
 `depstar` uses the classpath computed by `clojure`.
 For example, add web assets into an uberjar by including an alias in your `deps.edn`:
 
@@ -51,7 +53,7 @@ java -cp MyProject.jar clojure.main -m project.core
 
 # Changes
 
-* 0.2.2 -- Unreleased -- Fix #9 properly by creating parent directories prior to move of JAR file.
+* 0.2.2 -- Unreleased -- Fix #11 by adding a `-v`/`--verbose` option to display files added to the archive; Fix #9 properly by creating parent directories prior to move of JAR file.
 * 0.2.1 -- May 08, 2019 -- Fix #9 by creating parent directories for target JAR file (PR #10 @jarohen).
 * 0.2.0 -- May 07, 2019 -- Fix #8 by switching to ZipFileSystem and performing a single copy pass (instead of copying to temporary folder tree and then building a zip file).
 * 0.1.7 -- Apr 24, 2019 -- Fix #6 by excluding `*.pom` files; Fix #7 by excluding `module-info.class` files; lists excluded files if debugging enabled.

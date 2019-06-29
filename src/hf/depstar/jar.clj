@@ -2,5 +2,8 @@
   (:require [hf.depstar.uberjar :refer [run]]))
 
 (defn -main
-  [destination]
-  (run {:dest destination :jar :thin}))
+  [destination & [verbose]]
+  (when verbose
+    (when-not (#{"-v" "--verbose"} verbose)
+      (throw (ex-info "Expected -v or --verbose option" {:option verbose}))))
+  (run {:dest destination :jar :thin :verbose verbose}))
