@@ -233,7 +233,9 @@
         (binding [*debug* (env-prop "debug")]
           (run! #(copy-source % tmp options) cp))))
 
-    (Files/move jar-path (path dest) copy-opts)
+    (let [dest-path (path dest)]
+      (.. dest-path getParent toFile mkdirs)
+      (Files/move jar-path dest-path copy-opts))
 
     (when (pos? @errors)
       (println "\nCompleted with errors!")

@@ -51,6 +51,7 @@ java -cp MyProject.jar clojure.main -m project.core
 
 # Changes
 
+* 0.2.2 -- Unreleased -- Fix #9 properly by creating parent directories prior to move of JAR file.
 * 0.2.1 -- May 08, 2019 -- Fix #9 by creating parent directories for target JAR file (PR #10 @jarohen).
 * 0.2.0 -- May 07, 2019 -- Fix #8 by switching to ZipFileSystem and performing a single copy pass (instead of copying to temporary folder tree and then building a zip file).
 * 0.1.7 -- Apr 24, 2019 -- Fix #6 by excluding `*.pom` files; Fix #7 by excluding `module-info.class` files; lists excluded files if debugging enabled.
