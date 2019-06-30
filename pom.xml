@@ -28,7 +28,7 @@
     <url>https://github.com/seancorfield/depstar</url>
     <connection>scm:git:git://github.com/seancorfield/depstar.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/seancorfield/depstar.git</developerConnection>
-    <tag>c2122e36994bad250d1926b5aecf5ea179b3ba4c</tag>
+    <tag>a72513ba35646926a28a8196ebeedb54c624f82e</tag>
   </scm>
 
   <dependencies>
