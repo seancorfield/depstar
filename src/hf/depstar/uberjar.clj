@@ -238,8 +238,9 @@
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp))))
 
-    (let [dest-path (path dest)]
-      (.. dest-path getParent toFile mkdirs)
+    (let [dest-path (path dest)
+          parent (.getParent dest-path)]
+      (when parent (.. parent toFile mkdirs))
       (Files/move jar-path dest-path copy-opts))
 
     (when (pos? @errors)
