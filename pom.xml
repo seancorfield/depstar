@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>seancorfield</groupId>
   <artifactId>depstar</artifactId>
-  <version>0.2.2</version>
+  <version>0.2.3</version>
   <name>depstar</name>
 
   <description>a clj-based uberjarrer</description>
@@ -35,7 +35,7 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.10.0</version>
+      <version>1.7.0</version>
     </dependency>
   </dependencies>
 

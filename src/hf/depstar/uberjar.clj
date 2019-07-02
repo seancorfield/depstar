@@ -170,7 +170,7 @@
                   (prn {:error "unable to copy file"
                         :name name
                         :exception (class t)
-                        :message (ex-message t)})
+                        :message (.getMessage t)})
                   (swap! errors inc))))))))))
 
 (defn copy-directory

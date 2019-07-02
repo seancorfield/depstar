@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.2.2"}}}}
+                 {seancorfield/depstar {:mvn/version "0.2.3"}}}}
 }
 ```
 
@@ -53,6 +53,7 @@ java -cp MyProject.jar clojure.main -m project.core
 
 # Changes
 
+* 0.2.3 -- Jul 01, 2019 -- Back off Clojure version to 1.7.0 so `depstar` can be used to build JARs for older projects.
 * 0.2.2 -- Jun 29, 2019 -- Fix #11 by adding a `-v`/`--verbose` option to display files added to the archive; Fix #9 properly by creating parent directories prior to move of JAR file.
 * 0.2.1 -- May 08, 2019 -- Fix #9 by creating parent directories for target JAR file (PR #10 @jarohen).
 * 0.2.0 -- May 07, 2019 -- Fix #8 by switching to ZipFileSystem and performing a single copy pass (instead of copying to temporary folder tree and then building a zip file).
