@@ -221,14 +221,14 @@
 
 (defn run
   [{:keys [dest jar verbose] :or {jar :uber} :as options}]
-  (let [cp       (into [] (remove depstar-itself?) (current-classpath))
-        tmp-dir  (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
-        jar-path (doto (.resolve tmp-dir ^String dest)
-                   (.. getParent toFile mkdirs))
-        jar-file (java.net.URI. (str "jar:" (.toUri jar-path)))
-        zip-opts (doto (java.util.HashMap.)
-                       (.put "create" "true")
-                       (.put "encoding" "UTF-8"))]
+  (let [cp        (into [] (remove depstar-itself?) (current-classpath))
+        tmp-dir   (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
+        dest-name (str/replace dest #"^.*[/\\]" "")
+        jar-path  (.resolve tmp-dir ^String dest-name)
+        jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
+        zip-opts  (doto (java.util.HashMap.)
+                        (.put "create" "true")
+                        (.put "encoding" "UTF-8"))]
 
     (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
       (let [tmp (.getPath zfs "/" (make-array String 0))]
