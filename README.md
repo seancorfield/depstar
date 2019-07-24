@@ -44,15 +44,27 @@ Then invoke `depstar` with the chosen aliases:
 clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 ```
 
-Note that `depstar` does no AOT compilation and does not add a manifest to the jar file. You can run the uberjar as follows
-(assuming `project.core` is your main namespace):
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the group ID, artifact ID, and version of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare `clojure.main` as the `Main-Class` (otherwise that property will be omitted).
+
+You can suppress the consumption of the `pom.xml` file with the `-n` / `--no-pom` option.
+
+Note that `depstar` does no AOT compilation.
+
+If you build an uberjar, you can run the resulting file as follows:
 
 ```bash
 java -cp MyProject.jar clojure.main -m project.core
 ```
 
+If you build an uberjar with a `pom.xml` file present and do not specify `-n` / `--no-pom`, so that a manifest is included, you can run the resulting file as follows:
+
+```bash
+java -jar MyProject.jar -m project.core
+```
+
 # Changes
 
+* 0.3.0 -- unreleased -- Fix #13 by using the local `pom.xml`, if present, to generate a manifest (and copy `pom.xml` into the JAR file).
 * 0.2.4 -- Jul 05, 2019 -- **Important bug fix for tree-walking bug introduced in 0.2.1!**
 * 0.2.3 -- Jul 01, 2019 -- (do not use) Back off Clojure version to 1.7.0 so `depstar` can be used to build JARs for older projects.
 * 0.2.2 -- Jun 29, 2019 -- (do not use) Fix #11 by adding a `-v`/`--verbose` option to display files added to the archive; Fix #9 properly by creating parent directories prior to move of JAR file.
