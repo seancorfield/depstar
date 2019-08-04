@@ -62,6 +62,17 @@ If you build an uberjar with a `pom.xml` file present and do not specify `-n` / 
 java -jar MyProject.jar -m project.core
 ```
 
+Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `-m` / `--main` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`):
+
+```bash
+# compile your main class onto your classpath somehow
+# then build your uberjar:
+clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -m my.EntryPoint
+# now you can run it like this:
+java -jar MyProject.jar
+# that will run my.EntryPoint's main function
+```
+
 # Changes
 
 * 0.3.1 -- unreleased -- Address #14 by adding `-m` / `--main` option to override `Main-Class` in the manifest.
