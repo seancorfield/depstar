@@ -3,7 +3,4 @@
 
 (defn -main
   [destination & args]
-  (let [verbose (some #(#{"-v" "--verbose"} %) args)
-        no-pom  (some #(#{"-n" "--no-pom"}  %) args)]
-    (run {:dest destination :jar :thin
-          :verbose verbose :no-pom no-pom})))
+  (uber-main {:dest destination :jar :thin} args))

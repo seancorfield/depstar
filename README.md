@@ -64,6 +64,7 @@ java -jar MyProject.jar -m project.core
 
 # Changes
 
+* 0.3.1 -- unreleased -- Address #14 by adding `-m` / `--main` option to override `Main-Class` in the manifest.
 * 0.3.0 -- Jul 24, 2019 -- Fix #13 by using the local `pom.xml`, if present, to generate a manifest (and copy `pom.xml` into the JAR file).
 * 0.2.4 -- Jul 05, 2019 -- **Important bug fix for tree-walking bug introduced in 0.2.1!**
 * 0.2.3 -- Jul 01, 2019 -- (do not use) Back off Clojure version to 1.7.0 so `depstar` can be used to build JARs for older projects.
