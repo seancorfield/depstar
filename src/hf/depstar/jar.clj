@@ -1,5 +1,5 @@
 (ns hf.depstar.jar
-  (:require [hf.depstar.uberjar :refer [run]]))
+  (:require [hf.depstar.uberjar :refer [uber-main]]))
 
 (defn -main
   [destination & args]
