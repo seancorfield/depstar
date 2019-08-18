@@ -62,6 +62,34 @@ If you build an uberjar with a `pom.xml` file present and do not specify `-n` / 
 java -jar MyProject.jar -m project.core
 ```
 
+## Building uberjars with a custom main class
+
+As mentioned, depstar does no AOT compilation and therefore the main class of the produced jar is `clojure.main`. In some situations, you may want an uberjar with a custom main class (such as `myapp.main`). For example, this woul allow you to distribute an uberjar that Microsoft Windows users would be able to to double-click in order to launch your application.
+
+In order to cater for this use case, depstar allows you to override the main class of the uberjar, but the main class would have to be compiled ahead of time (AOT) by you. Here is an example of a Clojure script to achieve that:
+
+``` clojure
+(require '[hf.depstar.uberjar])
+
+(binding [*compile-path* "build_data"]
+  (compile 'myapp.main))
+
+(hf.depstar.uberjar/run {:dest       "target/myapp.jar"
+                         :main-class "myapp.core"
+                         :verbose    true})
+```
+
+Save this under `scripts/packaje.clj` and you can then define your alias like so:
+
+``` clojure
+:uberjar {:main-opts   ["scripts/package.clj"]
+          :extra-paths ["build_data"]
+          :extra-deps  {seancorfield/depstar {:mvn/version "0.3.0"}}}
+```
+
+Make sure that the `build_data` directory already exists before running the `:uberjar` alias.
+
+
 # Changes
 
 * 0.3.0 -- Jul 24, 2019 -- Fix #13 by using the local `pom.xml`, if present, to generate a manifest (and copy `pom.xml` into the JAR file).
