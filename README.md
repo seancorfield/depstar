@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.3.1"}}}}
+                 {seancorfield/depstar {:mvn/version "0.3.2"}}}}
 }
 ```
 
@@ -75,6 +75,7 @@ java -jar MyProject.jar
 
 # Changes
 
+* 0.3.2 -- Aug 26, 2019 -- Fix #16 by adding `:unknown` copy handler and checking for excluded filenames in it; an unknown file type is now ignored, with a warning printed if it is not an excluded filename.
 * 0.3.1 -- Aug 05, 2019 -- Address #14 by adding `-m` / `--main` option to override `Main-Class` in the manifest.
 * 0.3.0 -- Jul 24, 2019 -- Fix #13 by using the local `pom.xml`, if present, to generate a manifest (and copy `pom.xml` into the JAR file).
 * 0.2.4 -- Jul 05, 2019 -- **Important bug fix for tree-walking bug introduced in 0.2.1!**

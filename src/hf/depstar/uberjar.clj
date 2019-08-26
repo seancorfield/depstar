@@ -206,6 +206,13 @@
   [src _dest _options]
   (prn {:warning "could not find classpath entry" :path src}))
 
+(defmethod copy-source*
+  :unknown
+  [src _dest _options]
+  (if (excluded? src)
+    (when *debug* (prn {:excluded src}))
+    (prn {:warning "ignoring unknown file type" :path src})))
+
 (defn copy-source
   [src dest options]
   (copy-source* src dest options))
