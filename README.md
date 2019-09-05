@@ -73,6 +73,36 @@ java -jar MyProject.jar
 # that will run my.EntryPoint's main function
 ```
 
+# Deploy a Library
+
+After you've generated your uberjar with an above invocation, you can use the below to deploy to Clojars or other Maven repositories. Replace `clojars.org` & `YOUR.jar` as necessary.
+
+```bash
+mvn deploy:deploy-file -Dfile=YOUR.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
+```
+
+This assumes that you have credentials matching `-DrepositoryId` in your `~/.m2/settings.xml`. It should look like below:
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>clojars</id>
+      <username>someperson</username>
+      <password>topsecret</password>
+    </server>
+  </servers>
+</settings>
+```
+
+If you only want to install the artifact locally (for use in local development similar to `lein install`), you can use the following:
+
+```bash
+mvn install:install-file -Dfile=YOUR.jar -DpomFile=pom.xml
+```
+
+After that you can require the dependency coordinates as usual. Use `[your/artifact "0.0.1"]` for lein/boot or `your/artifact {:mvn/version "0.0.1"}` for deps.edn & it should be loaded from your local `~/.m2/repository` on next build.
+
 # Changes
 
 * 0.3.2 -- Aug 26, 2019 -- Fix #16 by adding `:unknown` copy handler and checking for excluded filenames in it; an unknown file type is now ignored, with a warning printed if it is not an excluded filename.
