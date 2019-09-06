@@ -44,7 +44,7 @@ Then invoke `depstar` with the chosen aliases:
 clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 ```
 
-If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the group ID, artifact ID, and version of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare `clojure.main` as the `Main-Class` (otherwise that property will be omitted).
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare `clojure.main` as the `Main-Class` (otherwise that property will be omitted -- see also the `-m` / `--main` option below).
 
 You can suppress the consumption of the `pom.xml` file with the `-n` / `--no-pom` option.
 
@@ -73,15 +73,15 @@ java -jar MyProject.jar
 # that will run my.EntryPoint's main function
 ```
 
-# Deploy a Library
+# Deploying a Library
 
-After you've generated your uberjar with an above invocation, you can use the below to deploy to Clojars or other Maven repositories. Replace `clojars.org` & `YOUR.jar` as necessary.
+After you've generated your uberjar as above with a `pom.xml` file, you can use the `mvn` command below to deploy to Clojars (or other Maven-like repositories).
 
 ```bash
-mvn deploy:deploy-file -Dfile=YOUR.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
+mvn deploy:deploy-file -Dfile=MyProject.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
 ```
 
-This assumes that you have credentials matching `-DrepositoryId` in your `~/.m2/settings.xml`. It should look like below:
+This assumes that you have credentials for your chosen repository in your `~/.m2/settings.xml` file. It should look like this (with your username and password):
 
 ```xml
 <settings>
@@ -95,13 +95,13 @@ This assumes that you have credentials matching `-DrepositoryId` in your `~/.m2/
 </settings>
 ```
 
-If you only want to install the artifact locally (for use in local development similar to `lein install`), you can use the following:
+If you only want to install the artifact locally (for use in local development, similar to `lein install`), you can use the following `mvn` command:
 
 ```bash
-mvn install:install-file -Dfile=YOUR.jar -DpomFile=pom.xml
+mvn install:install-file -Dfile=MyProject.jar -DpomFile=pom.xml
 ```
 
-After that you can require the dependency coordinates as usual. Use `[your/artifact "0.0.1"]` for lein/boot or `your/artifact {:mvn/version "0.0.1"}` for deps.edn & it should be loaded from your local `~/.m2/repository` on next build.
+After that you can require the dependency coordinates as usual, using the **group ID**, **artifact ID**, and **version** that you had setup in the `pom.xml` file.
 
 # Changes
 
