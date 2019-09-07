@@ -1,8 +1,7 @@
 (ns hf.depstar.uberjar
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.xml :as xml])
+            [clojure.string :as str])
   (:import (java.io InputStream PushbackReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
@@ -228,12 +227,10 @@
   (re-find #"depstar" p))
 
 (defn- first-by-tag
-  [pom-data tag]
-  (some-> (filter #(= tag (:tag %)) pom-data)
-          (first)
-          (:content)
-          (first)
-          (str/trim)))
+  [pom-text tag]
+  (-> (re-seq (re-pattern (str "<" (name tag) ">([^<]+)</" (name tag) ">")) pom-text)
+      (first)
+      (second)))
 
 (defn- maybe-copy-pom
   "If there is a pom.xml file in the current directory, build a manifest
@@ -241,12 +238,12 @@
   [^Path dest options]
   (let [pom (io/file "pom.xml")]
     (when (.exists pom)
-      (let [pom-data    (:content (xml/parse pom))
+      (let [pom-text    (slurp pom)
             jdk         (str/replace (System/getProperty "java.version")
                                      #"_.*" "")
-            group-id    (first-by-tag pom-data :groupId)
-            artifact-id (first-by-tag pom-data :artifactId)
-            version     (first-by-tag pom-data :version)
+            group-id    (first-by-tag pom-text :groupId)
+            artifact-id (first-by-tag pom-text :artifactId)
+            version     (first-by-tag pom-text :version)
             build-now   (java.util.Date.)
             last-mod    (FileTime/fromMillis (.getTime build-now))
             manifest    (str "Manifest-Version: 1.0\n"

@@ -105,6 +105,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 0.3.3 -- Sep 06, 2019 -- Fix #18 by using regex instead of `clojure.xml` to extract group ID, artifact ID, and version.
 * 0.3.2 -- Aug 26, 2019 -- Fix #16 by adding `:unknown` copy handler and checking for excluded filenames in it; an unknown file type is now ignored, with a warning printed if it is not an excluded filename.
 * 0.3.1 -- Aug 05, 2019 -- Address #14 by adding `-m` / `--main` option to override `Main-Class` in the manifest.
 * 0.3.0 -- Jul 24, 2019 -- Fix #13 by using the local `pom.xml`, if present, to generate a manifest (and copy `pom.xml` into the JAR file).

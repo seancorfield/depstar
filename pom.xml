@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>seancorfield</groupId>
   <artifactId>depstar</artifactId>
-  <version>0.3.2</version>
+  <version>0.3.3</version>
   <name>depstar</name>
 
   <description>a clj-based uberjarrer</description>
