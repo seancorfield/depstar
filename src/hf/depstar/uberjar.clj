@@ -6,7 +6,7 @@
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
                           FileSystem FileSystems Files
-                          FileVisitResult FileVisitor
+                          FileVisitOption FileVisitResult FileVisitor
                           Path)
            (java.nio.file.attribute FileAttribute FileTime)
            (java.util.jar JarInputStream JarEntry)))
@@ -40,6 +40,10 @@
 (def open-opts (into-array OpenOption [(StandardOpenOption/valueOf "CREATE")]))
 
 (def copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
+
+(def visit-opts (doto
+                 (java.util.HashSet.)
+                 (.add (FileVisitOption/valueOf "FOLLOW_LINKS"))))
 
 (defonce errors (atom 0))
 
@@ -191,7 +195,7 @@
           (postVisitDirectory [_ p ioexc]
             (if ioexc (throw ioexc) FileVisitResult/CONTINUE))
           (visitFileFailed [_ p ioexc] (throw (ex-info "Visit File Failed" {:p p} ioexc))))]
-    (Files/walkFileTree src copy-dir)
+    (Files/walkFileTree src visit-opts Integer/MAX_VALUE copy-dir)
     :ok))
 
 (defmethod copy-source*

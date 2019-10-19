@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.3.3"}}}}
+                 {seancorfield/depstar {:mvn/version "0.3.4"}}}}
 }
 ```
 
@@ -105,6 +105,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 0.3.4 -- Oct 18, 2019 -- Fix #19 by following symlinks when copying directories.
 * 0.3.3 -- Sep 06, 2019 -- Fix #18 by using regex instead of `clojure.xml` to extract group ID, artifact ID, and version.
 * 0.3.2 -- Aug 26, 2019 -- Fix #16 by adding `:unknown` copy handler and checking for excluded filenames in it; an unknown file type is now ignored, with a warning printed if it is not an excluded filename.
 * 0.3.1 -- Aug 05, 2019 -- Address #14 by adding `-m` / `--main` option to override `Main-Class` in the manifest.
