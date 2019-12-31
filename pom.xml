@@ -5,7 +5,6 @@
   <artifactId>depstar</artifactId>
   <version>0.4.0</version>
   <name>depstar</name>
-
   <description>a clj-based uberjarrer</description>
   <url>https://github.com/seancorfield/depstar</url>
   <licenses>
@@ -14,7 +13,6 @@
       <url>http://www.eclipse.org/legal/epl-v10.html</url>
     </license>
   </licenses>
-
   <developers>
     <developer>
       <name>Ghadi Shayban</name>
@@ -23,14 +21,12 @@
       <name>Sean Corfield</name>
     </developer>
   </developers>
-
   <scm>
     <url>https://github.com/seancorfield/depstar</url>
     <connection>scm:git:git://github.com/seancorfield/depstar.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/seancorfield/depstar.git</developerConnection>
-    <tag>67edf0a5e3c30964ca85dcc691a18cc5239bad11</tag>
+    <tag>4c069a0c04af89b4e3642c938f2600edaacf28e2</tag>
   </scm>
-
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
@@ -38,11 +34,9 @@
       <version>1.7.0</version>
     </dependency>
   </dependencies>
-
   <build>
     <sourceDirectory>src</sourceDirectory>
   </build>
-
   <repositories>
     <repository>
       <id>clojars</id>
@@ -53,7 +47,6 @@
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
   </repositories>
-
   <distributionManagement>
     <repository>
       <id>clojars</id>
@@ -61,5 +54,4 @@
       <url>https://clojars.org/repo</url>
     </repository>
   </distributionManagement>
-
 </project>
