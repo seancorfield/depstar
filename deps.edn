@@ -1,2 +1,6 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.7.0"}}}
+ :deps {org.clojure/clojure {:mvn/version "1.7.0"}}
+ :aliases {:test {:extra-paths ["classes"]
+                  :main-opts ["-m" "hf.depstar.uberjar" "depstar-standalone.jar"
+                              "-C" "-m" "hf.depstar.uberjar"]}
+           :jar {:main-opts ["-m" "hf.depstar.jar" "depstar.jar"]}}}

@@ -3,4 +3,5 @@
 .java-version
 .cpcache
 *.jar
+/classes
 /target

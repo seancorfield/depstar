@@ -1,5 +1,6 @@
 (ns hf.depstar.jar
-  (:require [hf.depstar.uberjar :refer [uber-main]]))
+  (:require [hf.depstar.uberjar :refer [uber-main]])
+  (:gen-class))
 
 (defn -main
   [destination & args]

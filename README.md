@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.3.4"}}}}
+                 {seancorfield/depstar {:mvn/version "0.4.0"}}}}
 }
 ```
 
@@ -48,7 +48,7 @@ If there is a `pom.xml` file in the current directory, `depstar` will attempt to
 
 You can suppress the consumption of the `pom.xml` file with the `-n` / `--no-pom` option.
 
-Note that `depstar` does no AOT compilation.
+Note that `depstar` does no AOT compilation by default.
 
 If you build an uberjar, you can run the resulting file as follows:
 
@@ -65,12 +65,30 @@ java -jar MyProject.jar -m project.core
 Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `-m` / `--main` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`):
 
 ```bash
-# compile your main class onto your classpath somehow
+# compile your main class onto your classpath somehow (see below)
 # then build your uberjar:
 clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -m my.EntryPoint
 # now you can run it like this:
 java -jar MyProject.jar
 # that will run my.EntryPoint's main function
+```
+
+As of 0.4.0, `depstar` supports an AOT mode for uberjars via the `-C` / `--compile` option. You must ensure that the `classes` folder exists in your project directory and that it is on the classpath. Whilst you must do the former manually, you can automate the latter by adding an alias to your `deps.edn` file like this:
+
+```clj
+{
+  :aliases {:uberjar
+              {:extra-paths ["classes"]
+               :extra-deps {seancorfield/depstar {:mvn/version "0.4.0"}}
+               :main-opts ["-m" "hf.depstar.uberjar" "MyProject.jar"
+                           "-C" "-m" "my.main.ns"]}}
+}
+```
+
+This will add `classes` and `depstar` to your classpath and then run `depstar` to create an uberjar called `MyProject.jar`, by compiling the `my.main.ns` namespace (into `classes`, along with any transitive dependencies), and specifying `Main-Class: my.main.ns` in the manifest.
+
+```bash
+java -jar MyProject.jar
 ```
 
 # Deploying a Library
@@ -105,6 +123,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 0.4.0 -- Dec 31, 2019 -- Address #20 by adding `-C` / `--compile` option to AOT-compile the main namespace for an uberjar.
 * 0.3.4 -- Oct 18, 2019 -- Fix #19 by following symlinks when copying directories.
 * 0.3.3 -- Sep 06, 2019 -- Fix #18 by using regex instead of `clojure.xml` to extract group ID, artifact ID, and version.
 * 0.3.2 -- Aug 26, 2019 -- Fix #16 by adding `:unknown` copy handler and checking for excluded filenames in it; an unknown file type is now ignored, with a warning printed if it is not an excluded filename.
