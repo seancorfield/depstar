@@ -48,6 +48,8 @@
 
 (defonce errors (atom 0))
 
+(defonce multi-release? (atom false))
+
 (defn path
   ^Path [s]
   (.getPath FS s (make-array String 0)))
@@ -164,13 +166,15 @@
     (when *verbose* (println src))
     (consume-jar (path src)
       (fn [inputstream ^JarEntry entry]
-        (let [name (.getName entry)
+        (let [^String name (.getName entry)
               last-mod (.getLastModifiedTime entry)
               target (.resolve ^Path dest name)]
           (if (.isDirectory entry)
             (Files/createDirectories target (make-array FileAttribute 0))
             (do (Files/createDirectories (.getParent target) (make-array FileAttribute 0))
               (try
+                (when (.startsWith name "META-INF/versions/")
+                  (reset! multi-release? true))
                 (copy! name inputstream target last-mod)
                 (catch Throwable t
                   (prn {:error "unable to copy file"
@@ -253,6 +257,8 @@
         manifest    (str "Manifest-Version: 1.0\n"
                          "Built-By: depstar\n"
                          "Build-Jdk: " jdk "\n"
+                         (when @multi-release?
+                           "Multi-Release: true\n")
                          (when-not (= :thin jar)
                            (str "Main-Class: "
                                 (or main-class "clojure.main")
@@ -320,6 +326,7 @@
     (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
       (let [tmp (.getPath zfs "/" (make-array String 0))]
         (reset! errors 0)
+        (reset! multi-release? false)
         (println "Building" (name jar) "jar:" dest)
         (binding [*debug* (env-prop "debug")
                   *verbose* verbose]

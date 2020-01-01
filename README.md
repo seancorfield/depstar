@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.4.1"}}}}
+                 {seancorfield/depstar {:mvn/version "0.4.2"}}}}
 }
 ```
 
@@ -79,7 +79,7 @@ As of 0.4.0, `depstar` supports an AOT mode for uberjars via the `-C` / `--compi
 {
   :aliases {:uberjar
               {:extra-paths ["classes"]
-               :extra-deps {seancorfield/depstar {:mvn/version "0.4.1"}}
+               :extra-deps {seancorfield/depstar {:mvn/version "0.4.2"}}
                :main-opts ["-m" "hf.depstar.uberjar" "MyProject.jar"
                            "-C" "-m" "my.main.ns"]}}
 }
@@ -123,6 +123,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 0.4.2 -- Dec 31, 2019 -- Address #22 by automatically setting `Multi-Release: true` in the uberjar manifest if any multi-release JAR files are consumed.
 * 0.4.1 -- Dec 31, 2019 -- Address #21 by ignoring `.keep` files.
 * 0.4.0 -- Dec 31, 2019 -- Address #20 by adding `-C` / `--compile` option to AOT-compile the main namespace for an uberjar.
 * 0.3.4 -- Oct 18, 2019 -- Fix #19 by following symlinks when copying directories.
