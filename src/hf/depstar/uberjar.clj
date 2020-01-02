@@ -304,19 +304,24 @@
   [{:keys [aot dest jar main-class no-pom ^File pom-file verbose]
     :or {jar :uber}
     :as options}]
-  (let [cp        (into [] (remove depstar-itself?) (current-classpath))
-        tmp-dir   (Files/createTempDirectory "depstar" (make-array FileAttribute 0))
+  (let [do-aot    (and aot main-class (not no-pom) (.exists pom-file))
+        tmp-c-dir (when do-aot
+                    (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
+        tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+        cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
+                        (remove depstar-itself?)
+                        (current-classpath))
         dest-name (str/replace dest #"^.*[/\\]" "")
-        jar-path  (.resolve tmp-dir ^String dest-name)
+        jar-path  (.resolve tmp-z-dir ^String dest-name)
         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
         zip-opts  (doto (java.util.HashMap.)
                         (.put "create" "true")
                         (.put "encoding" "UTF-8"))]
 
-    (when (and aot main-class (not no-pom) (.exists pom-file))
+    (when do-aot
       (try
         (println "Compiling" main-class "...")
-        (binding [*compile-path* "classes"]
+        (binding [*compile-path* (str tmp-c-dir)]
           (compile (symbol main-class)))
         (catch Throwable t
           (throw (ex-info (str "Compilation of " main-class " failed!")
@@ -342,6 +347,19 @@
     (when (pos? @errors)
       (println "\nCompleted with errors!")
       (System/exit 1))))
+
+(defn help []
+  (println "library usage:")
+  (println "  clojure -A:depstar -m hf.depstar.jar MyProject.jar")
+  (println "uberjar usage:")
+  (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
+  (println "options:")
+  (println "  -C / --compile -- enable AOT compilation for uberjar")
+  (println "  -m / --main    -- specify the main namespace (or class)")
+  (println "  -n / --no-pom  -- ignore pom.xml")
+  (println "  -v / --verbose -- explain what goes into the JAR file")
+  (println "note: the -C and -m options require a pom.xml file")
+  (System/exit 1))
 
 (defn uber-main
   [opts args]
@@ -369,5 +387,7 @@
                 {:no-pom no-pom :pom-file pom-file :verbose verbose}))))
 
 (defn -main
-  [destination & args]
+  [& [destination & args]]
+  (when-not destination
+    (help))
   (uber-main {:dest destination :jar :uber} args))
