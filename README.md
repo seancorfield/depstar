@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.5.1"}}}}
+                 {seancorfield/depstar {:mvn/version "0.5.2"}}}}
 }
 ```
 
@@ -116,6 +116,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 0.5.2 -- Jan 16, 2020 -- Fix NPE for uberjar when no main class specified #25 @noisesmith.
 * 0.5.1 -- Jan 02, 2020 -- Address #24 by transforming the main class (namespace) name.
 * 0.5.0 -- Jan 02, 2020 -- Address #23 by managing the AOT compilation folder automatically; users no longer need to create `classes` or add it to the classpath.
 * 0.4.2 -- Dec 31, 2019 -- Address #22 by automatically setting `Multi-Release: true` in the uberjar manifest if any multi-release JAR files are consumed.
