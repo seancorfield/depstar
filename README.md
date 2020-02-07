@@ -2,7 +2,7 @@
 
 <img src="./depstar_logo.png" />
 
-a clj-based uberjarrer (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced)
+Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced)
 
 # Usage
 
