@@ -116,6 +116,8 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 # Changes
 
+* 1.0.next -- in progress -- Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items; move to MAJOR.MINOR.COMMITS versioning scheme.
+
 * 0.5.2 -- Jan 16, 2020 -- Fix NPE for uberjar when no main class specified #25 @noisesmith.
 * 0.5.1 -- Jan 02, 2020 -- Address #24 by transforming the main class (namespace) name.
 * 0.5.0 -- Jan 02, 2020 -- Address #23 by managing the AOT compilation folder automatically; users no longer need to create `classes` or add it to the classpath.

@@ -15,6 +15,7 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *debug* nil)
+(def ^:dynamic ^:private *suppress-clash* nil)
 (def ^:dynamic ^:private *verbose* nil)
 
 (defn env-prop
@@ -68,7 +69,10 @@
 
 (defmulti clash (fn [filename in target]
                   (let [stategy (clash-strategy filename)]
-                    (prn {:warning "clashing jar item" :path filename :strategy stategy})
+                    (when-not *suppress-clash*
+                      (prn {:warning "clashing jar item"
+                            :path filename
+                            :strategy stategy}))
                     stategy)))
 
 (defmethod clash
@@ -303,7 +307,7 @@
              last-mod))))
 
 (defn run
-  [{:keys [aot dest jar main-class no-pom ^File pom-file verbose]
+  [{:keys [aot dest jar main-class no-pom ^File pom-file suppress verbose]
     :or {jar :uber}
     :as options}]
   (let [do-aot    (and aot main-class (not no-pom) (.exists pom-file))
@@ -336,6 +340,7 @@
         (reset! multi-release? false)
         (println "Building" (name jar) "jar:" dest)
         (binding [*debug* (env-prop "debug")
+                  *suppress-clash* suppress
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp)
           (when (and (not no-pom) (.exists pom-file))
@@ -357,19 +362,25 @@
   (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
   (println "options:")
   (println "  -C / --compile -- enable AOT compilation for uberjar")
+  (println "  -h / --help    -- show this help (and exit)")
   (println "  -m / --main    -- specify the main namespace (or class)")
   (println "  -n / --no-pom  -- ignore pom.xml")
+  (println "  -S / --suppress-clash")
+  (println "                 -- suppress warnings about clashing jar items")
   (println "  -v / --verbose -- explain what goes into the JAR file")
   (println "note: the -C and -m options require a pom.xml file")
   (System/exit 1))
 
 (defn uber-main
   [opts args]
+  (when (some #(#{"-h" "--help"} %) (cons (:dest opts) args))
+    (help))
   (let [aot        (some #(#{"-C" "--compile"} %) args)
         main-class (some #(when (#{"-m" "--main"} (first %)) (second %))
                          (partition 2 1 args))
         no-pom     (some #(#{"-n" "--no-pom"}  %) args)
         pom-file   (io/file "pom.xml")
+        suppress   (some #(#{"-S" "--suppress-clash"} %) args)
         verbose    (some #(#{"-v" "--verbose"} %) args)
         aot-main   ; sanity check options somewhat:
         (if main-class
@@ -386,7 +397,8 @@
 
     (run (merge opts
                 aot-main
-                {:no-pom no-pom :pom-file pom-file :verbose verbose}))))
+                {:no-pom no-pom :pom-file pom-file
+                 :suppress suppress :verbose verbose}))))
 
 (defn -main
   [& [destination & args]]
