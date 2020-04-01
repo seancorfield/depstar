@@ -1,6 +1,7 @@
 # Changes
 
 * 1.0.next -- in progress
+  * Fix #29 by supporting data reader files with `.cljs` and `.cljc` extensions as well as `.clj`.
   * Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items.
   * Move to MAJOR.MINOR.COMMITS versioning scheme.
 

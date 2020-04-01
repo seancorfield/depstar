@@ -58,7 +58,7 @@
 (defn clash-strategy
   [filename]
   (cond
-    (= "data_readers.clj" filename)
+    (re-find #"data_readers.clj[sc]?$" filename)
     :merge-edn
 
     (re-find #"^META-INF/services/" filename)
