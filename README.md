@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "0.5.2"}}}}
+                 {seancorfield/depstar {:mvn/version "1.0.94"}}}}
 }
 ```
 
@@ -113,6 +113,12 @@ mvn install:install-file -Dfile=MyProject.jar -DpomFile=pom.xml
 ```
 
 After that you can require the dependency coordinates as usual, using the **group ID**, **artifact ID**, and **version** that you had setup in the `pom.xml` file.
+
+# Releases
+
+This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
+
+Latest stable release: 1.0.94
 
 # License
 
