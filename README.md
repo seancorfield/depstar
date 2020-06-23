@@ -80,7 +80,7 @@ clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
 java -jar MyProject.jar
 ```
 
-This will compile the `project.core` namespace (and transitively everything it requires) into a temporary folder, add that temporary folder to the classpath, build the uberjar based on the `pom.xml` file, including everything on your classpath, with a manifest specifying `project.core` as the main class.
+This will compile the `project.core` namespace, which must have a `(:gen-class)` clause in its `ns` form, (and transitively everything that `project.core` requires) into a temporary folder, add that temporary folder to the classpath, build the uberjar based on the `pom.xml` file, including everything on your classpath, with a manifest specifying `project.core` as the main class.
 
 > Note: for the 0.4.x releases of `depstar`, you needed to create a `classes` folder manually and add it to the classpath yourself; as of 0.5.0, this is handled automatically by `depstar`.
 
