@@ -1,5 +1,8 @@
 # Changes
 
+* 1.0.96 -- Jul 29, 2020
+  * Added a workaround for https://issues.apache.org/jira/browse/LOG4J2-954 issue with `Log4j2Plugins.dat` file conflicts.
+
 * 1.0.94 -- Apr 10, 2020
   * Fix #29 by supporting data reader files with `.cljs` and `.cljc` extensions as well as `.clj`.
   * Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items.

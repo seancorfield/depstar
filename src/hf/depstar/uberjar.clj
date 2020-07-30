@@ -55,6 +55,27 @@
   ^Path [s]
   (.getPath FS s (make-array String 0)))
 
+(def ^:private idiotic-log4j2-plugins-file
+  "Log4j2 has a very problematic binary plugins cache file that needs to
+  be merged -- but it's going away in 3.0.0 apparently because it keeps
+  breaking build tools... As a workaround, if we run into multiple copies
+  of it, we will let the larger file overwrite the smaller file so that
+  we are likely to end up with more plugins in the final artifact. This
+  is not a real solution -- we should rebuild the PluginsCache object
+  but I don't want to face that right now. What we actually do here is
+  just allow 'small' versions of this file to be overwritten."
+  "META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat")
+
+(def ^:private idiotic-log4j2-plugins-size
+  "This is the threshold up to which we'll allow a duplicate Log4j2Plugins.dat
+  file to be overwritten. It's arbitrary based on current versions being about
+  3K in the log4j 1.2 bridge and about 20K in the log4j2 core file."
+  5000)
+
+(def ^:private ok-to-overwrite-idiotic-log4j2-file
+  "Assume we can overwrite it until we hit a large version."
+  (atom true))
+
 (defn clash-strategy
   [filename]
   (cond
@@ -64,16 +85,19 @@
     (re-find #"^META-INF/services/" filename)
     :concat-lines
 
+    (= idiotic-log4j2-plugins-file filename)
+    :log4j2-surgery
+
     :else
     :noop))
 
 (defmulti clash (fn [filename in target]
-                  (let [stategy (clash-strategy filename)]
+                  (let [strategy (clash-strategy filename)]
                     (when-not *suppress-clash*
                       (prn {:warning "clashing jar item"
                             :path filename
-                            :strategy stategy}))
-                    stategy)))
+                            :strategy strategy}))
+                    strategy)))
 
 (defmethod clash
   :merge-edn
@@ -97,6 +121,16 @@
         (run! println (-> (vec f1)
                           (conj "\n")
                           (into f2)))))))
+
+(defmethod clash
+  :log4j2-surgery
+  [filename ^InputStream in ^Path target]
+  ;; we should also set the last mod date/time here but it isn't passed in
+  ;; and I'm not going to make that change just to make this hack perfect!
+  (when @ok-to-overwrite-idiotic-log4j2-file
+    (when *debug*
+      (println "overwriting" filename))
+    (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)))
 
 (defmethod clash
   :default
@@ -127,6 +161,12 @@
       (clash filename in target)
       (do
         (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
+        (when (and (= idiotic-log4j2-plugins-file filename)
+                   (< idiotic-log4j2-plugins-size (Files/size target)))
+          ;; we've copied a big enough file, stop overwriting it!
+          (when *debug*
+            (println "copied" filename (Files/size target)))
+          (reset! ok-to-overwrite-idiotic-log4j2-file false))
         (when last-mod
           (Files/setLastModifiedTime target last-mod))))
     (when *debug*

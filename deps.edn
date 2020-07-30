@@ -3,5 +3,5 @@
  :aliases {:test {:main-opts ["-m" "hf.depstar.uberjar" "depstar-standalone.jar"
                               "-C" "-m" "hf.depstar.uberjar"]}
            :jar {:main-opts ["-m" "hf.depstar.jar" "depstar.jar"]}
-           :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
+           :deploy {:extra-deps {deps-deploy/deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "depstar.jar"]}}}
