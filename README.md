@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.0.96"}}}}
+                 {seancorfield/depstar {:mvn/version "1.0.97"}}}}
 }
 ```
 
@@ -118,7 +118,7 @@ After that you can require the dependency coordinates as usual, using the **grou
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 1.0.96
+Latest stable release: 1.0.97
 
 # License
 

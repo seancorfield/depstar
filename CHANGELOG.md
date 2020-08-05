@@ -1,5 +1,8 @@
 # Changes
 
+* 1.0.97 -- Aug 05, 2020
+  * Fix a bug in the workaround for `Log4j2Plugins.dat`.
+
 * 1.0.96 -- Jul 29, 2020
   * Added a workaround for https://issues.apache.org/jira/browse/LOG4J2-954 issue with `Log4j2Plugins.dat` file conflicts.
 

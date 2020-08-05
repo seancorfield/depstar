@@ -127,10 +127,18 @@
   [filename ^InputStream in ^Path target]
   ;; we should also set the last mod date/time here but it isn't passed in
   ;; and I'm not going to make that change just to make this hack perfect!
-  (when @ok-to-overwrite-idiotic-log4j2-file
+  (if @ok-to-overwrite-idiotic-log4j2-file
+    (do
+      (when *debug*
+        (println "overwriting" filename))
+      (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
+      (when (< idiotic-log4j2-plugins-size (Files/size target))
+        ;; we've copied a big enough file, stop overwriting it!
+        (when *debug*
+          (println "big enough -- no more copying!"))
+        (reset! ok-to-overwrite-idiotic-log4j2-file false)))
     (when *debug*
-      (println "overwriting" filename))
-    (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)))
+      (println "ignoring" filename))))
 
 (defmethod clash
   :default
@@ -161,12 +169,14 @@
       (clash filename in target)
       (do
         (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
-        (when (and (= idiotic-log4j2-plugins-file filename)
-                   (< idiotic-log4j2-plugins-size (Files/size target)))
-          ;; we've copied a big enough file, stop overwriting it!
+        (when (= idiotic-log4j2-plugins-file filename)
           (when *debug*
             (println "copied" filename (Files/size target)))
-          (reset! ok-to-overwrite-idiotic-log4j2-file false))
+          (when (< idiotic-log4j2-plugins-size (Files/size target))
+            ;; we've copied a big enough file, stop overwriting it!
+            (when *debug*
+              (println "big enough -- no more copying!"))
+            (reset! ok-to-overwrite-idiotic-log4j2-file false)))
         (when last-mod
           (Files/setLastModifiedTime target last-mod))))
     (when *debug*
