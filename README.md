@@ -28,7 +28,7 @@ Create a (library) jar by invoking `depstar` with the desired jar name:
 clojure -A:depstar -m hf.depstar.jar MyLib.jar
 ```
 
-If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` after the JAR filename.
+If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` before or after the JAR filename.
 
 `depstar` uses the classpath computed by `clojure`.
 For example, add web assets into an uberjar by including an alias in your `deps.edn`:
@@ -43,6 +43,8 @@ Then invoke `depstar` with the chosen aliases:
 ```bash
 clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 ```
+
+## `pom.xml`
 
 If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `-m` / `--main` option below, `clojure.main` if omitted).
 
@@ -68,6 +70,8 @@ clojure -A:depstar -m hf.depstar.uberjar MyProject.jar
 java -jar MyProject.jar -m project.core
 ```
 
+## AOT Compilation
+
 Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `-m` / `--main` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`).
 As of 0.4.0, you can ask `depstar` to compile your main namespace via the `-C` / `--compile` option:
 
@@ -80,13 +84,35 @@ clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
 java -jar MyProject.jar
 ```
 
-This will compile the `project.core` namespace, which must have a `(:gen-class)` clause in its `ns` form, (and transitively everything that `project.core` requires) into a temporary folder, add that temporary folder to the classpath, build the uberjar based on the `pom.xml` file, including everything on your classpath, with a manifest specifying `project.core` as the main class.
+This will compile the `project.core` namespace, *which must have a `(:gen-class)` clause in its `ns` form*, into a temporary folder, add that temporary folder to the classpath, build the uberjar based on the `pom.xml` file, including everything on your classpath, with a manifest specifying `project.core` as the main class.
+
+Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources).
 
 > Note: for the 0.4.x releases of `depstar`, you needed to create a `classes` folder manually and add it to the classpath yourself; as of 0.5.0, this is handled automatically by `depstar`.
 
+## `clojure -X` Usage
+
+The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function_that_takes_a_map) in the Deps and CLI reference for details.
+
+As of 1.0.next, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which accepts a hash map that mirrors the available command-line arguments:
+
+* `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
+* `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
+* `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
+* `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
+* `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
+* `:suppress-clash` -- if `true`, suppress warnings about clashing items going into the JAR file (like the `-S` / `--suppress-clash` option)
+* `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-V` / `--verbose` option)
+
+## Debugging `depstar` Behavior
+
+If you are seeing unexpected results with `depstar` and the `-V` / `--verbose` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
+
 # Deploying a Library
 
-After you've generated your JAR file as above with a `pom.xml` file, you can use the `mvn` command below to deploy to Clojars (or other Maven-like repositories).
+After you've generated your JAR file as above with a `pom.xml` file, you can use the `mvn` command below to deploy to Clojars (or other Maven-like repositories) -- or you could use [`deps-deploy`](https://github.com/slipset/deps-deploy) -- see below.
+
+## Deploying with Maven
 
 ```bash
 mvn deploy:deploy-file -Dfile=MyProject.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
@@ -113,6 +139,19 @@ mvn install:install-file -Dfile=MyProject.jar -DpomFile=pom.xml
 ```
 
 After that you can require the dependency coordinates as usual, using the **group ID**, **artifact ID**, and **version** that you had setup in the `pom.xml` file.
+
+## Deploying with `deps-deploy`
+
+As noted above, you could also use `deps-deploy` to deploy your JAR file to Clojars.
+Add the following alias to your `deps.edn` file:
+
+```clojure
+    ;; version 0.0.9 was the most recent as of 2020-08-19:
+    :deploy {:extra-deps {deps-deploy/deps-deploy {:mvn/version "RELEASE"}}
+             :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "MyProject.jar"]}}}
+```
+
+This expects your Clojars username to be in the `CLOJARS_USERNAME` environment variable and your Clojars **token** to be in the `CLOJARS_PASSWORD` environment variable.
 
 # Releases
 

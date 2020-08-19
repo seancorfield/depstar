@@ -216,7 +216,7 @@
 (defmethod copy-source*
   :jar
   [src dest options]
-  (when-not (= :thin (:jar options))
+  (when-not (= :thin (:jar-type options))
     (when *verbose* (println src))
     (consume-jar (path src)
       (fn [inputstream ^JarEntry entry]
@@ -280,13 +280,16 @@
   [src dest options]
   (copy-source* src dest options))
 
-(defn current-classpath
+(defn- current-classpath
   []
   (vec (.split ^String
                (System/getProperty "java.class.path")
                (System/getProperty "path.separator"))))
 
-(defn depstar-itself?
+(defn- depstar-itself?
+  "We ignore any classpath item that seems to be ourselves.
+
+  This might be overly aggressive but no one has complained so far."
   [p]
   (re-find #"depstar" p))
 
@@ -299,7 +302,7 @@
 (defn- copy-pom
   "Using the pom.xml file in the current directory, build a manifest
   and pom.properties, and add both those and the pom.xml file to the JAR."
-  [^Path dest {:keys [jar main-class pom-file]}]
+  [^Path dest ^File pom-file {:keys [jar-type main-class]}]
   (let [pom-text    (slurp pom-file)
         jdk         (str/replace (System/getProperty "java.version")
                                  #"_.*" "")
@@ -313,7 +316,7 @@
                          "Build-Jdk: " jdk "\n"
                          (when @multi-release?
                            "Multi-Release: true\n")
-                         (when-not (= :thin jar)
+                         (when-not (= :thin jar-type)
                            (str "Main-Class: "
                                 (if main-class
                                   (str/replace main-class "-" "_")
@@ -356,18 +359,81 @@
              (.resolve dest (str maven-dir "pom.xml"))
              last-mod))))
 
+(defn help-and-die []
+  (println "library usage:")
+  (println "  clojure -A:depstar -m hf.depstar.jar MyProject.jar")
+  (println "uberjar usage:")
+  (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
+  (println "  clojure -A:depstar -m hf.depstar.uberjar -C -m project.core MyProject.jar")
+  (println "options:")
+  (println "  -C / --compile -- enable AOT compilation for uberjar")
+  (println "  -h / --help    -- show this help (and exit)")
+  (println "  -J / --jar     -- an alternative way to specify the JAR file")
+  (println "  -m / --main    -- specify the main namespace (or class)")
+  (println "  -n / --no-pom  -- ignore pom.xml")
+  (println "  -S / --suppress-clash")
+  (println "                 -- suppress warnings about clashing jar items")
+  (println "  -v / --verbose -- explain what goes into the JAR file")
+  (println "note: the -C and -m options require a pom.xml file")
+  (System/exit 1))
+
 (defn run
-  [{:keys [aot dest jar main-class no-pom ^File pom-file suppress verbose]
-    :or {jar :uber}
+  "Generic entry point for uberjar invocations.
+
+  Can be used with `clojure -X`:
+
+  In `:aliases`:
+```clojure
+      :depstar {:extra-deps {seancorfield/depstar {:mvn/version ...}}}
+      :uberjar {:fn hf.depstar.uberjar/run
+                :args {:aot true}}
+```
+  Then run:
+```
+      clojure -R:depstar -X:uberjar :jar MyProject.jar :main-class project.core
+```
+  If the destination JAR file and main class are fixed, they could be
+  added to `:args` in `deps.edn`:
+```clojure
+      :depstar {:extra-deps {seancorfield/depstar {:mvn/version ...}}}
+      :uberjar {:fn hf.depstar.uberjar/run
+                :args {:aot true :jar MyProject.jar :main-class project.core}}
+```
+  Both `:jar` and `:main-class` can be specified as symbols or strings."
+  [{:keys [aot help jar jar-type main-class no-pom suppress-clash verbose]
+    :or {jar-type :uber}
     :as options}]
-  (let [do-aot    (and aot main-class (not no-pom) (.exists pom-file))
+
+  (when (or help (not jar)) (help-and-die))
+
+  (let [jar        (some-> jar name) ; ensure we have a string
+        main-class (some-> main-class name) ; ensure we have a string
+        options    (assoc options ; ensure defaulted/processed options present
+                          :jar        jar
+                          :jar-type   jar-type
+                          :main-class main-class)
+        ^File
+        pom-file (io/file "pom.xml")
+        do-aot
+        (if main-class
+          (cond (= :thin jar-type)
+                (println "Ignoring -m / --main because a 'thin' JAR was requested!")
+                no-pom
+                (println "Ignoring -m / --main because -n / --no-pom was specified!")
+                (not (.exists (io/file "pom.xml")))
+                (println "Ignoring -m / --main because no 'pom.xml' file is present!")
+                :else
+                aot)
+          (when aot
+            (println "Ignoring -C / --compile because -m / --main was not specified!")))
+
         tmp-c-dir (when do-aot
                     (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
         tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
                         (remove depstar-itself?)
                         (current-classpath))
-        dest-name (str/replace dest #"^.*[/\\]" "")
+        dest-name (str/replace jar #"^.*[/\\]" "")
         jar-path  (.resolve tmp-z-dir ^String dest-name)
         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
         zip-opts  (doto (java.util.HashMap.)
@@ -381,22 +447,22 @@
           (compile (symbol main-class)))
         (catch Throwable t
           (throw (ex-info (str "Compilation of " main-class " failed!")
-                          (dissoc options :pom-file)
+                          options
                           t)))))
 
     (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
       (let [tmp (.getPath zfs "/" (make-array String 0))]
         (reset! errors 0)
         (reset! multi-release? false)
-        (println "Building" (name jar) "jar:" dest)
+        (println "Building" (name jar-type) "jar:" jar)
         (binding [*debug* (env-prop "debug")
-                  *suppress-clash* suppress
+                  *suppress-clash* suppress-clash
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp)
           (when (and (not no-pom) (.exists pom-file))
-            (copy-pom tmp options)))))
+            (copy-pom tmp pom-file options)))))
 
-    (let [dest-path (path dest)
+    (let [dest-path (path jar)
           parent (.getParent dest-path)]
       (when parent (.. parent toFile mkdirs))
       (Files/move jar-path dest-path copy-opts))
@@ -405,53 +471,26 @@
       (println "\nCompleted with errors!")
       (System/exit 1))))
 
-(defn help []
-  (println "library usage:")
-  (println "  clojure -A:depstar -m hf.depstar.jar MyProject.jar")
-  (println "uberjar usage:")
-  (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
-  (println "options:")
-  (println "  -C / --compile -- enable AOT compilation for uberjar")
-  (println "  -h / --help    -- show this help (and exit)")
-  (println "  -m / --main    -- specify the main namespace (or class)")
-  (println "  -n / --no-pom  -- ignore pom.xml")
-  (println "  -S / --suppress-clash")
-  (println "                 -- suppress warnings about clashing jar items")
-  (println "  -v / --verbose -- explain what goes into the JAR file")
-  (println "note: the -C and -m options require a pom.xml file")
-  (System/exit 1))
+(defn parse-args
+  "Returns a hash map with all the options set from command-line args.
 
-(defn uber-main
-  [opts args]
-  (when (some #(#{"-h" "--help"} %) (cons (:dest opts) args))
-    (help))
-  (let [aot        (some #(#{"-C" "--compile"} %) args)
-        main-class (some #(when (#{"-m" "--main"} (first %)) (second %))
-                         (partition 2 1 args))
-        no-pom     (some #(#{"-n" "--no-pom"}  %) args)
-        pom-file   (io/file "pom.xml")
-        suppress   (some #(#{"-S" "--suppress-clash"} %) args)
-        verbose    (some #(#{"-v" "--verbose"} %) args)
-        aot-main   ; sanity check options somewhat:
-        (if main-class
-          (cond (= :thin (:jar opts))
-                (println "Ignoring -m / --main because a 'thin' JAR was requested!")
-                no-pom
-                (println "Ignoring -m / --main because -n / --no-pom was specified!")
-                (not (.exists pom-file))
-                (println "Ignoring -m / --main because no 'pom.xml' file is present!")
-                :else
-                {:aot aot :main-class main-class})
-          (when aot
-            (println "Ignoring -C / --compile because -m / --main was not specified!")))]
-
-    (run (merge opts
-                aot-main
-                {:no-pom no-pom :pom-file pom-file
-                 :suppress suppress :verbose verbose}))))
+  This is to avoid an external dependency on `clojure.tools.cli`."
+  [args]
+  (loop [opts {} args args]
+    (if (seq args)
+      (let [[arg more]
+            (case (first args)
+              ("-C" "--compile") [{:aot true} (next args)]
+              ("-h" "--help")    [{:help true} (next args)]
+              ("-J" "--jar")     [{:jar (fnext args)} (nnext args)]
+              ("-m" "--main")    [{:main-class (fnext args)} (nnext args)]
+              ("-n" "--no-pom")  [{:no-pom true} (next args)]
+              ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
+              ("-V" "--verbose") [{:verbose true} (next args)]
+              [{:jar (first args)} (next args)])]
+        (recur (merge opts arg) more))
+      opts)))
 
 (defn -main
-  [& [destination & args]]
-  (when-not destination
-    (help))
-  (uber-main {:dest destination :jar :uber} args))
+  [& args]
+  (run (assoc (parse-args args) :jar-type :uber)))

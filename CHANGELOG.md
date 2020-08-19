@@ -1,5 +1,9 @@
 # Changes
 
+* 1.0.next -- in progress (may be 1.1.next)
+  * Fix #35 by providing `hf.depstar.jar/run` and `hf.depstar.uberjar/run` as entry points that can be used by the Clojure CLI `-X` option (to execute a specific function and pass a map of arguments).
+  * Fix #33 by allowing destination JAR filename to appear anywhere on the command-line as well as adding a `-J` / `--jar` option for it.
+
 * 1.0.97 -- Aug 05, 2020
   * Fix a bug in the workaround for `Log4j2Plugins.dat`.
 
