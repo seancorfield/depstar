@@ -91,7 +91,7 @@
     :else
     :noop))
 
-(defmulti clash (fn [filename in target]
+(defmulti clash (fn [filename _in _target]
                   (let [strategy (clash-strategy filename)]
                     (when-not *suppress-clash*
                       (prn {:warning "clashing jar item"
@@ -142,7 +142,7 @@
 
 (defmethod clash
   :default
-  [_ in target]
+  [_ _in _target]
   ;; do nothing, first file wins
   nil)
 
@@ -210,7 +210,7 @@
       :not-found)))
 
 (defmulti copy-source*
-  (fn [src dest options]
+  (fn [src _dest _options]
     (classify src)))
 
 (defmethod copy-source*
@@ -260,7 +260,7 @@
 
 (defmethod copy-source*
   :directory
-  [src dest options]
+  [src dest _options]
   (when *verbose* (println src))
   (copy-directory (path src) dest))
 
