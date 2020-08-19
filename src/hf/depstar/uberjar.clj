@@ -280,11 +280,12 @@
   [src dest options]
   (copy-source* src dest options))
 
+(defn- parse-classpath [^String cp]
+  (vec (.split cp (System/getProperty "path.separator"))))
+
 (defn- current-classpath
   []
-  (vec (.split ^String
-               (System/getProperty "java.class.path")
-               (System/getProperty "path.separator"))))
+  (System/getProperty "java.class.path"))
 
 (defn- depstar-itself?
   "We ignore any classpath item that seems to be ourselves.
@@ -366,14 +367,15 @@
   (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
   (println "  clojure -A:depstar -m hf.depstar.uberjar -C -m project.core MyProject.jar")
   (println "options:")
-  (println "  -C / --compile -- enable AOT compilation for uberjar")
-  (println "  -h / --help    -- show this help (and exit)")
-  (println "  -J / --jar     -- an alternative way to specify the JAR file")
-  (println "  -m / --main    -- specify the main namespace (or class)")
-  (println "  -n / --no-pom  -- ignore pom.xml")
+  (println "  -C / --compile   -- enable AOT compilation for uberjar")
+  (println "  -P / --classpath -- override classpath")
+  (println "  -h / --help      -- show this help (and exit)")
+  (println "  -J / --jar       -- an alternative way to specify the JAR file")
+  (println "  -m / --main      -- specify the main namespace (or class)")
+  (println "  -n / --no-pom    -- ignore pom.xml")
   (println "  -S / --suppress-clash")
-  (println "                 -- suppress warnings about clashing jar items")
-  (println "  -v / --verbose -- explain what goes into the JAR file")
+  (println "                   -- suppress warnings about clashing jar items")
+  (println "  -v / --verbose   -- explain what goes into the JAR file")
   (println "note: the -C and -m options require a pom.xml file")
   (System/exit 1))
 
@@ -400,7 +402,7 @@
                 :args {:aot true :jar MyProject.jar :main-class project.core}}
 ```
   Both `:jar` and `:main-class` can be specified as symbols or strings."
-  [{:keys [aot help jar jar-type main-class no-pom suppress-clash verbose]
+  [{:keys [aot classpath help jar jar-type main-class no-pom suppress-clash verbose]
     :or {jar-type :uber}
     :as options}]
 
@@ -430,9 +432,11 @@
         tmp-c-dir (when do-aot
                     (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
         tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+        cp        (or classpath (current-classpath))
+        cp        (parse-classpath cp)
         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
                         (remove depstar-itself?)
-                        (current-classpath))
+                        cp)
         dest-name (str/replace jar #"^.*[/\\]" "")
         jar-path  (.resolve tmp-z-dir ^String dest-name)
         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
@@ -480,13 +484,14 @@
     (if (seq args)
       (let [[arg more]
             (case (first args)
-              ("-C" "--compile") [{:aot true} (next args)]
-              ("-h" "--help")    [{:help true} (next args)]
-              ("-J" "--jar")     [{:jar (fnext args)} (nnext args)]
-              ("-m" "--main")    [{:main-class (fnext args)} (nnext args)]
-              ("-n" "--no-pom")  [{:no-pom true} (next args)]
+              ("-C" "--compile")   [{:aot true} (next args)]
+              ("-P" "--classpath") [{:classpath (fnext args)} (nnext args)]
+              ("-h" "--help")      [{:help true} (next args)]
+              ("-J" "--jar")       [{:jar (fnext args)} (nnext args)]
+              ("-m" "--main")      [{:main-class (fnext args)} (nnext args)]
+              ("-n" "--no-pom")    [{:no-pom true} (next args)]
               ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
-              ("-V" "--verbose") [{:verbose true} (next args)]
+              ("-V" "--verbose")   [{:verbose true} (next args)]
               [{:jar (first args)} (next args)])]
         (recur (merge opts arg) more))
       opts)))

@@ -30,8 +30,10 @@ clojure -A:depstar -m hf.depstar.jar MyLib.jar
 
 If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` before or after the JAR filename.
 
-`depstar` uses the classpath computed by `clojure`.
-For example, add web assets into an uberjar by including an alias in your `deps.edn`:
+## Classpath
+
+By default, `depstar` uses the classpath computed by `clojure`.
+For example, you can add web assets into an uberjar by including an alias in your `deps.edn`:
 
 ```clj
 {:paths ["src"]
@@ -43,6 +45,14 @@ Then invoke `depstar` with the chosen aliases:
 ```bash
 clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 ```
+
+You can also pass an explicit classpath into `depstar` and it will use that instead of the (current) runtime classpath for building the JAR:
+
+```bash
+clojure -A:depstar -m hf.depstar.uberjar --classpath "$(clojure -A:webassets -Spath)" MyProject.jar
+```
+
+`--classpath` can be abbreviated to `-P`.
 
 ## `pom.xml`
 
@@ -97,6 +107,7 @@ The Clojure CLI is adding a `-X` option to execute a specific function and pass 
 As of 1.0.next, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which accepts a hash map that mirrors the available command-line arguments:
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
+* `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)

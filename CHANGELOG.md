@@ -2,6 +2,7 @@
 
 * 1.0.next -- in progress (may be 1.1.next)
   * Fix #35 by providing `hf.depstar.jar/run` and `hf.depstar.uberjar/run` as entry points that can be used by the Clojure CLI `-X` option (to execute a specific function and pass a map of arguments).
+  * Fix #34 by adding `-P` / `--classpath` option to specify a classpath to use (based on PR #36 @borkdude).
   * Fix #33 by allowing destination JAR filename to appear anywhere on the command-line as well as adding a `-J` / `--jar` option for it.
 
 * 1.0.97 -- Aug 05, 2020
