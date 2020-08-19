@@ -44,8 +44,8 @@
 (def copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
 
 (def visit-opts (doto
-                 (java.util.HashSet.)
-                 (.add (FileVisitOption/valueOf "FOLLOW_LINKS"))))
+                    (java.util.HashSet.)
+                  (.add (FileVisitOption/valueOf "FOLLOW_LINKS"))))
 
 (defonce errors (atom 0))
 
@@ -219,23 +219,23 @@
   (when-not (= :thin (:jar options))
     (when *verbose* (println src))
     (consume-jar (path src)
-      (fn [inputstream ^JarEntry entry]
-        (let [^String name (.getName entry)
-              last-mod (.getLastModifiedTime entry)
-              target (.resolve ^Path dest name)]
-          (if (.isDirectory entry)
-            (Files/createDirectories target (make-array FileAttribute 0))
-            (do (Files/createDirectories (.getParent target) (make-array FileAttribute 0))
-              (try
-                (when (.startsWith name "META-INF/versions/")
-                  (reset! multi-release? true))
-                (copy! name inputstream target last-mod)
-                (catch Throwable t
-                  (prn {:error "unable to copy file"
-                        :name name
-                        :exception (class t)
-                        :message (.getMessage t)})
-                  (swap! errors inc))))))))))
+                 (fn [inputstream ^JarEntry entry]
+                   (let [^String name (.getName entry)
+                         last-mod (.getLastModifiedTime entry)
+                         target (.resolve ^Path dest name)]
+                     (if (.isDirectory entry)
+                       (Files/createDirectories target (make-array FileAttribute 0))
+                       (do (Files/createDirectories (.getParent target) (make-array FileAttribute 0))
+                           (try
+                             (when (.startsWith name "META-INF/versions/")
+                               (reset! multi-release? true))
+                             (copy! name inputstream target last-mod)
+                             (catch Throwable t
+                               (prn {:error "unable to copy file"
+                                     :name name
+                                     :exception (class t)
+                                     :message (.getMessage t)})
+                               (swap! errors inc))))))))))
 
 (defn copy-directory
   [^Path src ^Path dest]
@@ -280,11 +280,12 @@
   [src dest options]
   (copy-source* src dest options))
 
+(defn parse-classpath [^String cp]
+  (vec (.split cp (System/getProperty "path.separator"))))
+
 (defn current-classpath
   []
-  (vec (.split ^String
-               (System/getProperty "java.class.path")
-               (System/getProperty "path.separator"))))
+  (System/getProperty "java.class.path"))
 
 (defn depstar-itself?
   [p]
@@ -357,22 +358,25 @@
              last-mod))))
 
 (defn run
-  [{:keys [aot dest jar main-class no-pom ^File pom-file suppress verbose]
+  [{:keys [aot classpath dest jar main-class
+           no-pom ^File pom-file suppress verbose]
     :or {jar :uber}
     :as options}]
   (let [do-aot    (and aot main-class (not no-pom) (.exists pom-file))
         tmp-c-dir (when do-aot
                     (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
         tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+        cp        (or classpath (current-classpath))
+        cp        (parse-classpath cp)
         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
                         (remove depstar-itself?)
-                        (current-classpath))
+                        cp)
         dest-name (str/replace dest #"^.*[/\\]" "")
         jar-path  (.resolve tmp-z-dir ^String dest-name)
         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
         zip-opts  (doto (java.util.HashMap.)
-                        (.put "create" "true")
-                        (.put "encoding" "UTF-8"))]
+                    (.put "create" "true")
+                    (.put "encoding" "UTF-8"))]
 
     (when do-aot
       (try
@@ -411,13 +415,14 @@
   (println "uberjar usage:")
   (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
   (println "options:")
-  (println "  -C / --compile -- enable AOT compilation for uberjar")
-  (println "  -h / --help    -- show this help (and exit)")
-  (println "  -m / --main    -- specify the main namespace (or class)")
-  (println "  -n / --no-pom  -- ignore pom.xml")
+  (println "  -C / --compile   -- enable AOT compilation for uberjar")
+  (println "  -P / --classpath -- override classpath")
+  (println "  -h / --help      -- show this help (and exit)")
+  (println "  -m / --main      -- specify the main namespace (or class)")
+  (println "  -n / --no-pom    -- ignore pom.xml")
   (println "  -S / --suppress-clash")
-  (println "                 -- suppress warnings about clashing jar items")
-  (println "  -v / --verbose -- explain what goes into the JAR file")
+  (println "                   -- suppress warnings about clashing jar items")
+  (println "  -v / --verbose   -- explain what goes into the JAR file")
   (println "note: the -C and -m options require a pom.xml file")
   (System/exit 1))
 
@@ -425,14 +430,17 @@
   [opts args]
   (when (some #(#{"-h" "--help"} %) (cons (:dest opts) args))
     (help))
-  (let [aot        (some #(#{"-C" "--compile"} %) args)
-        main-class (some #(when (#{"-m" "--main"} (first %)) (second %))
-                         (partition 2 1 args))
-        no-pom     (some #(#{"-n" "--no-pom"}  %) args)
-        pom-file   (io/file "pom.xml")
-        suppress   (some #(#{"-S" "--suppress-clash"} %) args)
-        verbose    (some #(#{"-v" "--verbose"} %) args)
-        aot-main   ; sanity check options somewhat:
+  (let [aot         (some #(#{"-C" "--compile"} %) args)
+        partitioned (partition 2 1 args)
+        main-class  (some #(when (#{"-m" "--main"} (first %)) (second %))
+                          partitioned)
+        classpath   (some #(when (#{"-P" "--classpath"} (first %)) (second %))
+                          partitioned)
+        no-pom      (some #(#{"-n" "--no-pom"}  %) args)
+        pom-file    (io/file "pom.xml")
+        suppress    (some #(#{"-S" "--suppress-clash"} %) args)
+        verbose     (some #(#{"-v" "--verbose"} %) args)
+        aot-main    ; sanity check options somewhat:
         (if main-class
           (cond (= :thin (:jar opts))
                 (println "Ignoring -m / --main because a 'thin' JAR was requested!")
@@ -443,12 +451,13 @@
                 :else
                 {:aot aot :main-class main-class})
           (when aot
-            (println "Ignoring -C / --compile because -m / --main was not specified!")))]
-
-    (run (merge opts
-                aot-main
-                {:no-pom no-pom :pom-file pom-file
-                 :suppress suppress :verbose verbose}))))
+            (println "Ignoring -C / --compile because -m / --main was not specified!")))
+        opts (merge opts
+                    aot-main
+                    {:no-pom no-pom :pom-file pom-file
+                     :suppress suppress :verbose verbose
+                     :classpath classpath})]
+    (run opts)))
 
 (defn -main
   [& [destination & args]]
