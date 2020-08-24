@@ -100,6 +100,10 @@ Remember that AOT compilation is transitive so, in addition to your `project.cor
 
 > Note: for the 0.4.x releases of `depstar`, you needed to create a `classes` folder manually and add it to the classpath yourself; as of 0.5.0, this is handled automatically by `depstar`.
 
+## Excluding Files
+
+The `-X` / `--exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `--exclude "^clojure/core/specs/alpha.*"` -- note the `^` anchor at the start of the pattern and `.*` at the end.
+
 ## `clojure -X` Usage
 
 The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function_that_takes_a_map) in the Deps and CLI reference for details.
@@ -113,11 +117,11 @@ As of 1.0.next, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
 * `:suppress-clash` -- if `true`, suppress warnings about clashing items going into the JAR file (like the `-S` / `--suppress-clash` option)
-* `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-V` / `--verbose` option)
+* `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
 
 ## Debugging `depstar` Behavior
 
-If you are seeing unexpected results with `depstar` and the `-V` / `--verbose` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
+If you are seeing unexpected results with `depstar` and the `-v` / `--verbose` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
 
 # Deploying a Library
 

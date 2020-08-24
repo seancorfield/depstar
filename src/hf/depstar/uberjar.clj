@@ -15,6 +15,7 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *debug* nil)
+(def ^:dynamic ^:private *exclude* nil)
 (def ^:dynamic ^:private *suppress-clash* nil)
 (def ^:dynamic ^:private *verbose* nil)
 
@@ -159,7 +160,8 @@
 
 (defn excluded?
   [filename]
-  (some #(re-matches % filename) exclude-patterns))
+  (or (some #(re-matches % filename) exclude-patterns)
+      (some #(re-matches % filename) *exclude*)))
 
 (defn copy!
   ;; filename drives strategy
@@ -368,7 +370,7 @@
   (println "  clojure -A:depstar -m hf.depstar.uberjar -C -m project.core MyProject.jar")
   (println "options:")
   (println "  -C / --compile   -- enable AOT compilation for uberjar")
-  (println "  -P / --classpath -- override classpath")
+  (println "  -P / --classpath <cp> -- override classpath")
   (println "  -h / --help      -- show this help (and exit)")
   (println "  -J / --jar       -- an alternative way to specify the JAR file")
   (println "  -m / --main      -- specify the main namespace (or class)")
@@ -376,6 +378,7 @@
   (println "  -S / --suppress-clash")
   (println "                   -- suppress warnings about clashing jar items")
   (println "  -v / --verbose   -- explain what goes into the JAR file")
+  (println "  -X / --exclude <regex> -- exclude files via regex")
   (println "note: the -C and -m options require a pom.xml file")
   (System/exit 1))
 
@@ -402,7 +405,8 @@
                 :args {:aot true :jar MyProject.jar :main-class project.core}}
 ```
   Both `:jar` and `:main-class` can be specified as symbols or strings."
-  [{:keys [aot classpath help jar jar-type main-class no-pom suppress-clash verbose]
+  [{:keys [aot classpath exclude help jar jar-type main-class
+           no-pom suppress-clash verbose]
     :or {jar-type :uber}
     :as options}]
 
@@ -460,6 +464,7 @@
         (reset! multi-release? false)
         (println "Building" (name jar-type) "jar:" jar)
         (binding [*debug* (env-prop "debug")
+                  *exclude* exclude
                   *suppress-clash* suppress-clash
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp)
@@ -480,22 +485,38 @@
 
   This is to avoid an external dependency on `clojure.tools.cli`."
   [args]
-  (loop [opts {} args args]
-    (if (seq args)
-      (let [[arg more]
-            (case (first args)
-              ("-C" "--compile")   [{:aot true} (next args)]
-              ("-P" "--classpath") [{:classpath (fnext args)} (nnext args)]
-              ("-h" "--help")      [{:help true} (next args)]
-              ("-J" "--jar")       [{:jar (fnext args)} (nnext args)]
-              ("-m" "--main")      [{:main-class (fnext args)} (nnext args)]
-              ("-n" "--no-pom")    [{:no-pom true} (next args)]
-              ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
-              ("-V" "--verbose")   [{:verbose true} (next args)]
-              [{:jar (first args)} (next args)])]
-        (recur (merge opts arg) more))
-      opts)))
+  (let [merge-args (fn [opts new-arg]
+                     (if (contains? new-arg :exclude)
+                       (update opts :exclude (fnil conj []) (:exclude new-arg))
+                       (merge opts new-arg)))]
+    (loop [opts {} args args]
+      (if (seq args)
+        (let [[arg more]
+              (case (first args)
+                ("-C" "--compile")   [{:aot true} (next args)]
+                ("-P" "--classpath") [{:classpath (fnext args)} (nnext args)]
+                ("-h" "--help")      [{:help true} (next args)]
+                ("-J" "--jar")       [{:jar (fnext args)} (nnext args)]
+                ("-m" "--main")      [{:main-class (fnext args)} (nnext args)]
+                ("-n" "--no-pom")    [{:no-pom true} (next args)]
+                ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
+                ("-v" "--verbose")   [{:verbose true} (next args)]
+                ("-X" "--exclude")   [{:exclude (re-pattern (fnext args))}
+                                      (nnext args)]
+                (if (= \- (ffirst args))
+                  (do
+                    (println "Unknown option" (first args) "ignored!")
+                    [{} (next args)])
+                  [{:jar (first args)} (next args)]))]
+          (recur (merge-args opts arg) more))
+        opts))))
 
 (defn -main
   [& args]
   (run (assoc (parse-args args) :jar-type :uber)))
+
+(comment
+  (parse-args ["foo.jar" "-v"])
+  (parse-args ["foo.jar" "-V"])
+  (parse-args ["-X" "a" "foo.jar" "-X" "b"])
+  nil)
