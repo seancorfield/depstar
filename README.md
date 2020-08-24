@@ -102,7 +102,7 @@ Remember that AOT compilation is transitive so, in addition to your `project.cor
 
 ## Excluding Files
 
-The `-X` / `--exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `--exclude "^clojure/core/specs/alpha.*"` -- note the `^` anchor at the start of the pattern and `.*` at the end.
+The `-X` / `--exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `--exclude "clojure/core/specs/alpha.*"` -- note `.*` at the end so it matches the entire filename.
 
 ## `clojure -X` Usage
 
@@ -112,6 +112,7 @@ As of 1.0.next, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
+* `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)

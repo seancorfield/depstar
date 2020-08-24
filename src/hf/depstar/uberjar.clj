@@ -464,7 +464,7 @@
         (reset! multi-release? false)
         (println "Building" (name jar-type) "jar:" jar)
         (binding [*debug* (env-prop "debug")
-                  *exclude* exclude
+                  *exclude* (mapv re-pattern exclude)
                   *suppress-clash* suppress-clash
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp)
@@ -501,8 +501,7 @@
                 ("-n" "--no-pom")    [{:no-pom true} (next args)]
                 ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
                 ("-v" "--verbose")   [{:verbose true} (next args)]
-                ("-X" "--exclude")   [{:exclude (re-pattern (fnext args))}
-                                      (nnext args)]
+                ("-X" "--exclude")   [{:exclude (fnext args)} (nnext args)]
                 (if (= \- (ffirst args))
                   (do
                     (println "Unknown option" (first args) "ignored!")
