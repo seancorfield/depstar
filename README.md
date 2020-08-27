@@ -12,7 +12,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.0.97"}}}}
+                 {seancorfield/depstar {:mvn/version "1.1.104"}}}}
 }
 ```
 
@@ -94,7 +94,7 @@ clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
 java -jar MyProject.jar
 ```
 
-This will compile the `project.core` namespace, *which must have a `(:gen-class)` clause in its `ns` form*, into a temporary folder, add that temporary folder to the classpath, build the uberjar based on the `pom.xml` file, including everything on your classpath, with a manifest specifying `project.core` as the main class.
+This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `-P` / `--classpath` -- see above), build the uberjar based on the `pom.xml` file, including everything on the classpath, with a manifest specifying `project.core` as the main class.
 
 Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources).
 
@@ -108,7 +108,7 @@ The `-X` / `--exclude` option can be used to provide one or more regex patterns 
 
 The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function_that_takes_a_map) in the Deps and CLI reference for details.
 
-As of 1.0.next, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which accepts a hash map that mirrors the available command-line arguments:
+As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which both accept a hash map that mirrors the available command-line arguments:
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
@@ -173,7 +173,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 1.0.97
+Latest stable release: 1.1.104
 
 # License
 

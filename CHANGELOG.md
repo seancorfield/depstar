@@ -1,6 +1,6 @@
 # Changes
 
-* 1.0.next -- in progress (may be 1.1.next)
+* 1.1.104 -- Aug 27, 2020
   * Fix #37 by adding `-X` / `--exclude` to provide one or more regex used to exclude files from the JAR.
   * Fix #35 by providing `hf.depstar.jar/run` and `hf.depstar.uberjar/run` as entry points that can be used by the Clojure CLI `-X` option (to execute a specific function and pass a map of arguments).
   * Fix #34 by adding `-P` / `--classpath` option to specify a classpath to use (based on PR #36 @borkdude).
