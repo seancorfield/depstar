@@ -412,8 +412,8 @@
 
   (when (or help (not jar)) (help-and-die))
 
-  (let [jar        (some-> jar name) ; ensure we have a string
-        main-class (some-> main-class name) ; ensure we have a string
+  (let [jar        (some-> jar str) ; ensure we have a string
+        main-class (some-> main-class str) ; ensure we have a string
         options    (assoc options ; ensure defaulted/processed options present
                           :jar        jar
                           :jar-type   jar-type
