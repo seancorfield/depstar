@@ -106,7 +106,7 @@ The `-X` / `--exclude` option can be used to provide one or more regex patterns 
 
 ## `clojure -X` Usage
 
-The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function_that_takes_a_map) in the Deps and CLI reference for details.
+The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli_prerelease#_executing_a_function) in the Deps and CLI reference for details.
 
 As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which both accept a hash map that mirrors the available command-line arguments:
 
@@ -119,6 +119,39 @@ As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
 * `:suppress-clash` -- if `true`, suppress warnings about clashing items going into the JAR file (like the `-S` / `--suppress-clash` option)
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
+
+The following commands would be equivalent:
+
+```bash
+clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
+
+clojure -X:depstar hf.depstar.uberjar/run :jar MyProject.jar :aot true :main-class project.core
+```
+
+You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
+
+```clojure
+  ;; a new :uberjar alias to build a project-specific JAR file:
+  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.104"}}
+            :exec-fn hf.depstar.uberjar/run
+            :exec-args {:jar "MyProject.jar"
+                        :aot true
+                        :main-class project.core}}
+```
+
+Now you can just run:
+
+```bash
+clojure -X:uberjar
+```
+
+You can choose to override those on the command-line if you wish:
+
+```bash
+clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
+```
+
+For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
 
 ## Debugging `depstar` Behavior
 
