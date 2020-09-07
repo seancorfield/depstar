@@ -2,7 +2,7 @@
 
 <img src="./depstar_logo.png" />
 
-Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced)
+Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced). For support, help, general questions, use the [#depstar channel on the Clojurians Slack](https://app.slack.com/client/T03RZGPFR/C01AK5V8HPT).
 
 # Usage
 
