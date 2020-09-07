@@ -3,7 +3,7 @@
   (:gen-class))
 
 (defn run
-  "Generic entry point for jar invocations.
+  "Legacy entry point for jar invocations.
 
   Can be used with `clojure -X`:
 

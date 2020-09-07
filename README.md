@@ -2,7 +2,7 @@
 
 <img src="./depstar_logo.png" />
 
-Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced). 
+Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced).
 
 For support, help, general questions, use the [#depstar channel on the Clojurians Slack](https://app.slack.com/client/T03RZGPFR/C01AK5V8HPT).
 
@@ -110,7 +110,7 @@ The `-X` / `--exclude` option can be used to provide one or more regex patterns 
 
 The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli_prerelease#_executing_a_function) in the Deps and CLI reference for details.
 
-As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` which both accept a hash map that mirrors the available command-line arguments:
+As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.uberjar/run` (in 1.1.next, these will be `hf.depstar/jar` and `hf.depstar/uberjar` respectively) which both accept a hash map that mirrors the available command-line arguments:
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)

@@ -383,7 +383,7 @@
   (System/exit 1))
 
 (defn run
-  "Generic entry point for uberjar invocations.
+  "Legacy entry point for uberjar invocations.
 
   Can be used with `clojure -X`:
 
