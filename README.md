@@ -51,7 +51,7 @@ clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 You can also pass an explicit classpath into `depstar` and it will use that instead of the (current) runtime classpath for building the JAR:
 
 ```bash
-clojure -A:depstar -m hf.depstar.uberjar --classpath "$(clojure -A:webassets -Spath)" MyProject.jar
+clojure -A:depstar -m hf.depstar.uberjar --classpath "$(clojure -Spath -A:webassets)" MyProject.jar
 ```
 
 `--classpath` can be abbreviated to `-P`.
