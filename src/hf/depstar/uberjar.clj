@@ -97,7 +97,7 @@
                     (when *debug-clash*
                       (println "Found" filename "in multiple dependencies,"
                                (case strategy
-                                 :merge-end      "merged as EDN."
+                                 :merge-edn      "merged as EDN."
                                  :concat-lines   "concatenated it."
                                  :log4j2-surgery "selecting the largest."
                                  :noop           "ignoring duplicate.")))
