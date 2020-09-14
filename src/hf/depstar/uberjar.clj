@@ -111,6 +111,13 @@
         ;; read and then close target since we will rewrite it
         f2 (with-open [r (PushbackReader. (Files/newBufferedReader target))]
              (edn/read r))]
+    (when-let [conflict (some #(when-let [v (get f1 %)]
+                                 (when-not (= v (get f2 %))
+                                   {:tag % :new v :old (get f2 %)}))
+                              (keys f2))]
+      (prn {:warning "conflicting data-reader mapping"
+            :conflict conflict
+            :in target}))
     (with-open [w (Files/newBufferedWriter target open-opts)]
       (binding [*out* w]
         (prn (merge f1 f2))))))

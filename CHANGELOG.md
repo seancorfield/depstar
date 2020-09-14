@@ -2,6 +2,7 @@
 
 * 1.1.next -- in progress
   * Fix #40 by making "suppress clash" the default; add `-D` / `--debug-clash` option to print the "clashing jar items" warnings.
+  * Address #39 by issuing a warning if conflicting data readers are detected (`.cljc` data readers are not fully supported yet).
   * Streamline the `clojure -X` invocation entry points to `hf.depstar/jar` and `hf.depstar/uberjar`.
 
 * 1.1.104 -- Aug 27, 2020
