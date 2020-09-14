@@ -14,7 +14,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.1.116"}}}}
+                 {seancorfield/depstar {:mvn/version "1.1.117"}}}}
 }
 ```
 
@@ -120,7 +120,7 @@ The `-X` / `--exclude` option can be used to provide one or more regex patterns 
 
 The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli_prerelease#_executing_a_function) in the Deps and CLI reference for details.
 
-As of 1.1.116, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments:
+As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments:
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
@@ -144,7 +144,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.116"}}
+  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.117"}}
             :exec-fn hf.depstar.uberjar/run
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -218,7 +218,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 1.1.116
+Latest stable release: 1.1.117
 
 # License
 
