@@ -1,6 +1,7 @@
 # Changes
 
 * 1.1.next -- in progress
+  * Fix #40 by making "suppress clash" the default; add `-D` / `--debug-clash` option to print the "clashing jar items" warnings.
   * Streamline the `clojure -X` invocation entry points to `hf.depstar/jar` and `hf.depstar/uberjar`.
 
 * 1.1.104 -- Aug 27, 2020
@@ -18,7 +19,7 @@
 
 * 1.0.94 -- Apr 10, 2020
   * Fix #29 by supporting data reader files with `.cljs` and `.cljc` extensions as well as `.clj`.
-  * Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items.
+  * As of 1.1.next, this is the default and there is a new `-D` / `--debug-clash` option to display these warnings: _Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items._
   * Move to MAJOR.MINOR.COMMITS versioning scheme.
 
 * 0.5.2 -- Jan 16, 2020

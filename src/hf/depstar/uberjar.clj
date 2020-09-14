@@ -16,7 +16,7 @@
 
 (def ^:dynamic ^:private *debug* nil)
 (def ^:dynamic ^:private *exclude* nil)
-(def ^:dynamic ^:private *suppress-clash* nil)
+(def ^:dynamic ^:private *debug-clash* nil)
 (def ^:dynamic ^:private *verbose* nil)
 
 (defn env-prop
@@ -94,10 +94,13 @@
 
 (defmulti clash (fn [filename _in _target]
                   (let [strategy (clash-strategy filename)]
-                    (when-not *suppress-clash*
-                      (prn {:warning "clashing jar item"
-                            :path filename
-                            :strategy strategy}))
+                    (when *debug-clash*
+                      (println "Found" filename "in multiple dependencies,"
+                               (case strategy
+                                 :merge-end      "merged as EDN."
+                                 :concat-lines   "concatenated it."
+                                 :log4j2-surgery "selecting the largest."
+                                 :noop           "ignoring duplicate.")))
                     strategy)))
 
 (defmethod clash
@@ -371,12 +374,12 @@
   (println "options:")
   (println "  -C / --compile   -- enable AOT compilation for uberjar")
   (println "  -P / --classpath <cp> -- override classpath")
+  (println "  -D / --debug-clash -- print warnings about clashing jar items")
+  (println "  (can be useful if you are not getting the files you expect in the JAR)")
   (println "  -h / --help      -- show this help (and exit)")
   (println "  -J / --jar       -- an alternative way to specify the JAR file")
   (println "  -m / --main      -- specify the main namespace (or class)")
   (println "  -n / --no-pom    -- ignore pom.xml")
-  (println "  -S / --suppress-clash")
-  (println "                   -- suppress warnings about clashing jar items")
   (println "  -v / --verbose   -- explain what goes into the JAR file")
   (println "  -X / --exclude <regex> -- exclude files via regex")
   (println "note: the -C and -m options require a pom.xml file")
@@ -405,8 +408,8 @@
                 :args {:aot true :jar MyProject.jar :main-class project.core}}
 ```
   Both `:jar` and `:main-class` can be specified as symbols or strings."
-  [{:keys [aot classpath exclude help jar jar-type main-class
-           no-pom suppress-clash verbose]
+  [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
+           no-pom verbose]
     :or {jar-type :uber}
     :as options}]
 
@@ -465,7 +468,7 @@
         (println "Building" (name jar-type) "jar:" jar)
         (binding [*debug* (env-prop "debug")
                   *exclude* (mapv re-pattern exclude)
-                  *suppress-clash* suppress-clash
+                  *debug-clash* debug-clash
                   *verbose* verbose]
           (run! #(copy-source % tmp options) cp)
           (when (and (not no-pom) (.exists pom-file))
@@ -495,11 +498,12 @@
               (case (first args)
                 ("-C" "--compile")   [{:aot true} (next args)]
                 ("-P" "--classpath") [{:classpath (fnext args)} (nnext args)]
+                ("-D" "--debug-clash") [{:debug-clash true} (next args)]
                 ("-h" "--help")      [{:help true} (next args)]
                 ("-J" "--jar")       [{:jar (fnext args)} (nnext args)]
                 ("-m" "--main")      [{:main-class (fnext args)} (nnext args)]
                 ("-n" "--no-pom")    [{:no-pom true} (next args)]
-                ("-S" "--suppress-clash") [{:suppress-clash true} (next args)]
+                ("-S" "--suppress-clash") [{:debug-clash false} (next args)]
                 ("-v" "--verbose")   [{:verbose true} (next args)]
                 ("-X" "--exclude")   [{:exclude (fnext args)} (nnext args)]
                 (if (= \- (ffirst args))

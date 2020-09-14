@@ -124,12 +124,12 @@ As of 1.1.104, `depstar` supports this via `hf.depstar.jar/run` and `hf.depstar.
 
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
+* `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them)
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
-* `:suppress-clash` -- if `true`, suppress warnings about clashing items going into the JAR file (like the `-S` / `--suppress-clash` option)
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
 
 The following commands would be equivalent:
