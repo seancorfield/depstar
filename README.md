@@ -6,7 +6,7 @@ Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects 
 
 For support, help, general questions, use the [#depstar channel on the Clojurians Slack](https://app.slack.com/client/T03RZGPFR/C01AK5V8HPT).
 
-# Usage
+# Basic Usage
 
 Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn`:
 
@@ -18,17 +18,27 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 }
 ```
 
+Create a (library) jar by invoking `depstar` with the desired jar name:
+
+```bash
+clojure -A:depstar -m hf.depstar.jar MyLib.jar
+```
+
+If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
+
 Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
 clojure -A:depstar -m hf.depstar.uberjar MyProject.jar
 ```
 
-Create a (library) jar by invoking `depstar` with the desired jar name:
+An uberjar created by that command can be run as follows:
 
 ```bash
-clojure -A:depstar -m hf.depstar.jar MyLib.jar
+java -cp MyProject.jar clojure.main -m project.core
 ```
+
+If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the sections below for more information about both of those.
 
 If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` before or after the JAR filename.
 
