@@ -496,9 +496,18 @@
   This is to avoid an external dependency on `clojure.tools.cli`."
   [args]
   (let [merge-args (fn [opts new-arg]
-                     (if (contains? new-arg :exclude)
-                       (update opts :exclude (fnil conj []) (:exclude new-arg))
-                       (merge opts new-arg)))]
+                     (cond (contains? new-arg :exclude)
+                           (update opts :exclude (fnil conj []) (:exclude new-arg))
+                           (and (contains? new-arg :jar)
+                                (contains? opts :jar))
+                           (do
+                             (println "Multiple JAR files specified:"
+                                      (:jar opts) "and" (:jar new-arg))
+                             (println "Ignoring" (:jar opts)
+                                      "and using" (:jar new-arg) "\n")
+                             (merge opts new-arg))
+                           :else
+                           (merge opts new-arg)))]
     (loop [opts {} args args]
       (if (seq args)
         (let [[arg more]
