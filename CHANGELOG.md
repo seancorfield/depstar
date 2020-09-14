@@ -1,6 +1,6 @@
 # Changes
 
-* 1.1.next -- in progress
+* 1.1.116 -- Sep 13, 2020
   * Fix #40 by making "suppress clash" the default; add `-D` / `--debug-clash` option to print the "clashing jar items" warnings.
   * Address #39 by issuing a warning if conflicting data readers are detected (`.cljc` data readers are not fully supported yet).
   * Address #38 by warning about multiple JAR file names (explaining which one is selected).
@@ -21,7 +21,7 @@
 
 * 1.0.94 -- Apr 10, 2020
   * Fix #29 by supporting data reader files with `.cljs` and `.cljc` extensions as well as `.clj`.
-  * As of 1.1.next, this is the default and there is a new `-D` / `--debug-clash` option to display these warnings: _Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items._
+  * As of 1.1.116, this is the default and there is a new `-D` / `--debug-clash` option to display these warnings: _Address #28 by adding `-S` / `--suppress-clash` option to suppress the warning about clashing jar items._
   * Move to MAJOR.MINOR.COMMITS versioning scheme.
 
 * 0.5.2 -- Jan 16, 2020
