@@ -86,6 +86,9 @@
     (re-find #"^META-INF/services/" filename)
     :concat-lines
 
+    (re-find #"(?i)^(META-INF/)?(COPYRIGHT|NOTICE|LICENSE)(\.(txt|md))?$" filename)
+    :concat-no-dupe
+
     (= idiotic-log4j2-plugins-file filename)
     :log4j2-surgery
 
@@ -99,6 +102,7 @@
                                (case strategy
                                  :merge-edn      "merged as EDN."
                                  :concat-lines   "concatenated it."
+                                 :concat-no-dupe "concatenated (if not dupe)."
                                  :log4j2-surgery "selecting the largest."
                                  :noop           "ignoring duplicate.")))
                     strategy)))
@@ -133,6 +137,23 @@
                           (conj "\n")
                           (into f2)))))))
 
+(def ^:private no-dupe-files (atom {}))
+
+(defmethod clash
+  :concat-no-dupe
+  [filename in target]
+  (let [f1 (line-seq (io/reader in))
+        f2 (Files/readAllLines target)
+        prev-files (get @no-dupe-files filename)]
+    ;; if we haven't already seen this exact same file before, concatenate it:
+    (when-not (some #(= % f1) prev-files)
+      (with-open [w (Files/newBufferedWriter target open-opts)]
+        (binding [*out* w]
+          (run! println (-> (vec f1)
+                            (conj "\n")
+                            (into f2)))))
+      (swap! no-dupe-files update filename (fnil conj []) f1))))
+
 (defmethod clash
   :log4j2-surgery
   [filename ^InputStream in ^Path target]
@@ -161,12 +182,10 @@
   "Filename patterns to exclude. These are checked with re-matches and
   should therefore be complete filename matches including any path."
   [#"project.clj"
-   #"LICENSE"
-   #"COPYRIGHT"
    #"\.keep"
    #".*\.pom$" #"module-info\.class$"
    #"(?i)META-INF/.*\.(?:MF|SF|RSA|DSA)"
-   #"(?i)META-INF/(?:INDEX\.LIST|DEPENDENCIES|NOTICE|LICENSE)(?:\.txt)?"])
+   #"(?i)META-INF/(?:INDEX\.LIST|DEPENDENCIES)(?:\.txt)?"])
 
 (defn excluded?
   [filename]
