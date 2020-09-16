@@ -144,6 +144,7 @@
   [filename in target]
   (let [f1 (line-seq (io/reader in))
         f2 (Files/readAllLines target)
+        filename   (str/lower-case filename) ; avoid case-sensitivity
         prev-files (get @no-dupe-files filename)]
     ;; if we haven't already seen this exact same file before, concatenate it:
     (when-not (some #(= % f1) prev-files)
