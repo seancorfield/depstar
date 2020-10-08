@@ -484,9 +484,11 @@
         (binding [*compile-path* (str tmp-c-dir)]
           (compile (symbol main-class)))
         (catch Throwable t
-          (throw (ex-info (str "Compilation of " main-class " failed!")
-                          options
-                          t)))))
+          (println (str "\nCompilation of " main-class " failed!\n"
+                        "\n" (.getMessage t)
+                        (when-let [^Throwable c (.getCause t)]
+                          (str "\nCaused by: " (.getMessage c)))))
+          (System/exit 1))))
 
     (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
       (let [tmp (.getPath zfs "/" (make-array String 0))]

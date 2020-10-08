@@ -2,6 +2,7 @@
 
 * 1.1.next -- in progress
   * Fix #43 by changing `pom.properties` to use `=` instead of `:`.
+  * Fix #42 by changing how `compile` failures are handled.
   * Fix #41 by including license and copyright notices; concatenates repeated files if they are not exact duplicates.
 
 * 1.1.117 -- 2020-09-14
