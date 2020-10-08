@@ -208,7 +208,7 @@ Add the following alias to your `deps.edn` file:
 
 ```clojure
     ;; version 0.0.9 was the most recent as of 2020-08-19:
-    :deploy {:extra-deps {deps-deploy/deps-deploy {:mvn/version "RELEASE"}}
+    :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
              :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "MyProject.jar"]}}}
 ```
 
