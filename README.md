@@ -118,7 +118,7 @@ The `-X` / `--exclude` option can be used to provide one or more regex patterns 
 
 ## `clojure -X` Usage
 
-The Clojure CLI is adding a `-X` option to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli_prerelease#_executing_a_function) in the Deps and CLI reference for details.
+The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function) in the Deps and CLI reference for details.
 
 As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments:
 
@@ -164,6 +164,8 @@ clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
 ```
 
 For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
+
+> Note: currently, uberjars built via `-X` will include `org.clojure/tools.deps.alpha` even if it is not a dependency of your project. If that matters, use the `-M` approach above. This will be addressed in `depstar` 2.0.
 
 ## Debugging `depstar` Behavior
 
