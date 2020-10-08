@@ -394,10 +394,10 @@
 
 (defn help-and-die []
   (println "library usage:")
-  (println "  clojure -A:depstar -m hf.depstar.jar MyProject.jar")
+  (println "  clojure -M:depstar -m hf.depstar.jar MyProject.jar")
   (println "uberjar usage:")
-  (println "  clojure -A:depstar -m hf.depstar.uberjar MyProject.jar")
-  (println "  clojure -A:depstar -m hf.depstar.uberjar -C -m project.core MyProject.jar")
+  (println "  clojure -M:depstar -m hf.depstar.uberjar MyProject.jar")
+  (println "  clojure -M:depstar -m hf.depstar.uberjar -C -m project.core MyProject.jar")
   (println "options:")
   (println "  -C / --compile   -- enable AOT compilation for uberjar")
   (println "  -P / --classpath <cp> -- override classpath")

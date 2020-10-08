@@ -21,7 +21,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
-clojure -A:depstar -m hf.depstar.jar MyLib.jar
+clojure -M:depstar -m hf.depstar.jar MyLib.jar
 ```
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
@@ -29,7 +29,7 @@ If you want to deploy a library to Clojars (or Maven Central), you're going to a
 Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
-clojure -A:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
 ```
 
 An uberjar created by that command can be run as follows:
@@ -55,13 +55,13 @@ For example, you can add web assets into an uberjar by including an alias in you
 Then invoke `depstar` with the chosen aliases:
 
 ```bash
-clojure -A:depstar:webassets -m hf.depstar.uberjar MyProject.jar
+clojure -M:depstar:webassets -m hf.depstar.uberjar MyProject.jar
 ```
 
 You can also pass an explicit classpath into `depstar` and it will use that instead of the (current) runtime classpath for building the JAR:
 
 ```bash
-clojure -A:depstar -m hf.depstar.uberjar --classpath "$(clojure -Spath -A:webassets)" MyProject.jar
+clojure -M:depstar -m hf.depstar.uberjar --classpath "$(clojure -Spath -A:webassets)" MyProject.jar
 ```
 
 `--classpath` can be abbreviated to `-P`.
@@ -77,7 +77,7 @@ Note that `depstar` does no AOT compilation by default -- use the `-C` / `--comp
 If you build an uberjar, you can run the resulting file as follows:
 
 ```bash
-clojure -A:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
 java -cp MyProject.jar clojure.main -m project.core
 ```
 
@@ -87,7 +87,7 @@ If you build an uberjar with a `pom.xml` file present and do not specify `-n` / 
 # generate pom.xml (or create it manually)
 clojure -Spom
 # build the uberjar without AOT compilation
-clojure -A:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
 # Main-Class: clojure.main
 java -jar MyProject.jar -m project.core
 ```
@@ -101,7 +101,7 @@ As of 0.4.0, you can ask `depstar` to compile your main namespace via the `-C` /
 # generate pom.xml (or create it manually)
 clojure -Spom
 # build the uberjar with AOT compilation
-clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
+clojure -M:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
 # Main-Class: project.core
 java -jar MyProject.jar
 ```
@@ -135,7 +135,7 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 The following commands would be equivalent:
 
 ```bash
-clojure -A:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
+clojure -M:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
 
 clojure -X:depstar hf.depstar.uberjar/run :jar MyProject.jar :aot true :main-class project.core
 ```
