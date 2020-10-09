@@ -1,6 +1,6 @@
 # Changes
 
-* 1.1.next -- in progress
+* 1.1.128 -- 2020-10-09
   * Fix #44 by changing how legal files are initially copied.
 
 * 1.1.126 -- 2020-10-08
