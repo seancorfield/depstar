@@ -1,5 +1,8 @@
 # Changes
 
+* 1.1.next -- in progress
+  * Fix #44 by changing how legal files are initially copied.
+
 * 1.1.126 -- 2020-10-08
   * Fix #43 by changing `pom.properties` to use `=` instead of `:`.
   * Fix #42 by changing how `compile` failures are handled.

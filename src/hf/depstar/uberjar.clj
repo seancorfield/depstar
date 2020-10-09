@@ -77,6 +77,9 @@
   "Assume we can overwrite it until we hit a large version."
   (atom true))
 
+(defn- legal-file? [filename]
+  (re-find #"(?i)^(META-INF/)?(COPYRIGHT|NOTICE|LICENSE)(\.(txt|md))?$" filename))
+
 (defn clash-strategy
   [filename]
   (cond
@@ -86,7 +89,7 @@
     (re-find #"^META-INF/services/" filename)
     :concat-lines
 
-    (re-find #"(?i)^(META-INF/)?(COPYRIGHT|NOTICE|LICENSE)(\.(txt|md))?$" filename)
+    (legal-file? filename)
     :concat-no-dupe
 
     (= idiotic-log4j2-plugins-file filename)
@@ -200,7 +203,16 @@
     (if (Files/exists target (make-array LinkOption 0))
       (clash filename in target)
       (do
-        (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
+        ;; remember legal files as we copy them:
+        (if (legal-file? filename)
+          (let [content (line-seq (io/reader in))]
+            (with-open [w (Files/newBufferedWriter target open-opts)]
+              (binding [*out* w]
+                (run! println content)))
+            (swap! no-dupe-files
+                   update (str/lower-case filename) (fnil conj []) content))
+          (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts))
+        ;; record first Log4j2Plugins.dat file:
         (when (= idiotic-log4j2-plugins-file filename)
           (when *debug*
             (println "copied" filename (Files/size target)))
