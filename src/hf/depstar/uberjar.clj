@@ -522,7 +522,9 @@
 
     (when (pos? @errors)
       (println "\nCompleted with errors!")
-      (System/exit 1))))
+      (System/exit 1))
+
+    (shutdown-agents)))
 
 (defn parse-args
   "Returns a hash map with all the options set from command-line args.
