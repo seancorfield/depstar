@@ -8,6 +8,8 @@ For support, help, general questions, use the [#depstar channel on the Clojurian
 
 # Basic Usage
 
+> Note: these instructions assume you have at least version 1.10.1.697 of the Clojure CLI installed -- otherwise you'll need to use `-A` instead of `-M`.
+
 Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn`:
 
 ```clj
