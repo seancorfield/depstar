@@ -1,5 +1,9 @@
 # Changes
 
+* 1.1.132 -- 2020-10-19
+  * Call `shutdown-agents` at the end of processing, to account for AOT of badly-behaved code that has side-effecting top-level forms.
+  * Clarify, in the README, that Clojure CLI version 1.10.1.697 or later is assumed.
+
 * 1.1.128 -- 2020-10-09
   * Fix #44 by changing how legal files are initially copied.
 
