@@ -404,7 +404,7 @@
              (.resolve dest (str maven-dir "pom.xml"))
              last-mod))))
 
-(defn help-and-die []
+(defn- print-help []
   (println "library usage:")
   (println "  clojure -M:depstar -m hf.depstar.jar MyProject.jar")
   (println "uberjar usage:")
@@ -421,8 +421,108 @@
   (println "  -n / --no-pom    -- ignore pom.xml")
   (println "  -v / --verbose   -- explain what goes into the JAR file")
   (println "  -X / --exclude <regex> -- exclude files via regex")
-  (println "note: the -C and -m options require a pom.xml file")
-  (System/exit 1))
+  (println "note: the -C and -m options require a pom.xml file"))
+
+(defn run*
+  "Core functionality for depstar. Can be called from a REPL or as a library.
+  Returns a hash map containing:
+  * `:success` -- `true` or `false`
+  * `:reason` -- if `:success` is `false`, this explains what failed:
+    * `:help` -- help was requested
+    * `:no-jar` -- the `:jar` option was missing
+    * `:aot-failed` -- `:compile` was requested but it threw an exception
+    * `:copy-failure` -- one or more files could not be copied into the JAR
+  More detail about success and failure is printed to stdout."
+  [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
+           no-pom verbose]
+    :or {jar-type :uber}
+    :as options}]
+
+  (cond
+
+   help
+   {:success false :reason :help}
+
+   (not jar)
+   {:success false :reason :no-jar}
+
+   :else
+   (let [jar        (some-> jar str) ; ensure we have a string
+         main-class (some-> main-class str) ; ensure we have a string
+         options    (assoc options ; ensure defaulted/processed options present
+                           :jar        jar
+                           :jar-type   jar-type
+                           :main-class main-class)
+         ^File
+         pom-file (io/file "pom.xml")
+         do-aot
+         (if main-class
+           (cond (= :thin jar-type)
+                 (println "Ignoring -m / --main because a 'thin' JAR was requested!")
+                 no-pom
+                 (println "Ignoring -m / --main because -n / --no-pom was specified!")
+                 (not (.exists (io/file "pom.xml")))
+                 (println "Ignoring -m / --main because no 'pom.xml' file is present!")
+                 :else
+                 aot)
+           (when aot
+             (println "Ignoring -C / --compile because -m / --main was not specified!")))
+
+         tmp-c-dir (when do-aot
+                     (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
+         tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+         cp        (or classpath (current-classpath))
+         cp        (parse-classpath cp)
+         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
+                         (remove depstar-itself?)
+                         cp)
+         dest-name (str/replace jar #"^.*[/\\]" "")
+         jar-path  (.resolve tmp-z-dir ^String dest-name)
+         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
+         zip-opts  (doto (java.util.HashMap.)
+                         (.put "create" "true")
+                         (.put "encoding" "UTF-8"))
+         aot-failure
+         (when do-aot
+           (try
+             (println "Compiling" main-class "...")
+             (binding [*compile-path* (str tmp-c-dir)]
+               (compile (symbol main-class)))
+             false ; no AOT failure
+             (catch Throwable t
+               (println (str "\nCompilation of " main-class " failed!\n"
+                             "\n" (.getMessage t)
+                             (when-let [^Throwable c (.getCause t)]
+                               (str "\nCaused by: " (.getMessage c)))))
+               true)))]
+
+     (if aot-failure
+
+       {:success false :reason :aot-failed}
+
+       (do
+         ;; copy everything to a temporary ZIP (JAR) file:
+         (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
+           (let [tmp (.getPath zfs "/" (make-array String 0))]
+             (reset! errors 0)
+             (reset! multi-release? false)
+             (println "Building" (name jar-type) "jar:" jar)
+             (binding [*debug* (env-prop "debug")
+                       *exclude* (mapv re-pattern exclude)
+                       *debug-clash* debug-clash
+                       *verbose* verbose]
+               (run! #(copy-source % tmp options) cp)
+               (when (and (not no-pom) (.exists pom-file))
+                 (copy-pom tmp pom-file options)))))
+         ;; move the temporary file to its final location:
+         (let [dest-path (path jar)
+               parent (.getParent dest-path)]
+           (when parent (.. parent toFile mkdirs))
+           (Files/move jar-path dest-path copy-opts))
+         ;; was it successful?
+         (if (pos? @errors)
+           {:success false :reason :copy-failures}
+           {:success true}))))))
 
 (defn run
   "Legacy entry point for uberjar invocations.
@@ -447,84 +547,17 @@
                 :args {:aot true :jar MyProject.jar :main-class project.core}}
 ```
   Both `:jar` and `:main-class` can be specified as symbols or strings."
-  [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
-           no-pom verbose]
-    :or {jar-type :uber}
-    :as options}]
-
-  (when (or help (not jar)) (help-and-die))
-
-  (let [jar        (some-> jar str) ; ensure we have a string
-        main-class (some-> main-class str) ; ensure we have a string
-        options    (assoc options ; ensure defaulted/processed options present
-                          :jar        jar
-                          :jar-type   jar-type
-                          :main-class main-class)
-        ^File
-        pom-file (io/file "pom.xml")
-        do-aot
-        (if main-class
-          (cond (= :thin jar-type)
-                (println "Ignoring -m / --main because a 'thin' JAR was requested!")
-                no-pom
-                (println "Ignoring -m / --main because -n / --no-pom was specified!")
-                (not (.exists (io/file "pom.xml")))
-                (println "Ignoring -m / --main because no 'pom.xml' file is present!")
-                :else
-                aot)
-          (when aot
-            (println "Ignoring -C / --compile because -m / --main was not specified!")))
-
-        tmp-c-dir (when do-aot
-                    (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
-        tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
-        cp        (or classpath (current-classpath))
-        cp        (parse-classpath cp)
-        cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
-                        (remove depstar-itself?)
-                        cp)
-        dest-name (str/replace jar #"^.*[/\\]" "")
-        jar-path  (.resolve tmp-z-dir ^String dest-name)
-        jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
-        zip-opts  (doto (java.util.HashMap.)
-                        (.put "create" "true")
-                        (.put "encoding" "UTF-8"))]
-
-    (when do-aot
-      (try
-        (println "Compiling" main-class "...")
-        (binding [*compile-path* (str tmp-c-dir)]
-          (compile (symbol main-class)))
-        (catch Throwable t
-          (println (str "\nCompilation of " main-class " failed!\n"
-                        "\n" (.getMessage t)
-                        (when-let [^Throwable c (.getCause t)]
-                          (str "\nCaused by: " (.getMessage c)))))
-          (System/exit 1))))
-
-    (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
-      (let [tmp (.getPath zfs "/" (make-array String 0))]
-        (reset! errors 0)
-        (reset! multi-release? false)
-        (println "Building" (name jar-type) "jar:" jar)
-        (binding [*debug* (env-prop "debug")
-                  *exclude* (mapv re-pattern exclude)
-                  *debug-clash* debug-clash
-                  *verbose* verbose]
-          (run! #(copy-source % tmp options) cp)
-          (when (and (not no-pom) (.exists pom-file))
-            (copy-pom tmp pom-file options)))))
-
-    (let [dest-path (path jar)
-          parent (.getParent dest-path)]
-      (when parent (.. parent toFile mkdirs))
-      (Files/move jar-path dest-path copy-opts))
-
-    (when (pos? @errors)
-      (println "\nCompleted with errors!")
-      (System/exit 1))
-
-    (shutdown-agents)))
+  [options]
+  (let [result (run* options)]
+    (if (:success result)
+      (shutdown-agents)
+      (do
+        (case (:reason result)
+          :help         (print-help)
+          :no-jar       (print-help)
+          :aot-failed   nil ; details already printed
+          :copy-failure (println "\nCompleted with errors!"))
+        (System/exit 1)))))
 
 (defn parse-args
   "Returns a hash map with all the options set from command-line args.

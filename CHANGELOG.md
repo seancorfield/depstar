@@ -1,5 +1,8 @@
 # Changes
 
+* 1.1.133 -- 2020-11-07
+  * Fix #45 by refactoring `hf.depstar.uberjar/run` so there's a REPL-friendly/library version of the function as `hf.depstar.uberjar/run*`.
+
 * 1.1.132 -- 2020-10-19
   * Call `shutdown-agents` at the end of processing, to account for AOT of badly-behaved code that has side-effecting top-level forms.
   * Clarify, in the README, that Clojure CLI version 1.10.1.697 or later is assumed.
