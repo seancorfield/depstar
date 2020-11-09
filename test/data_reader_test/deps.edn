@@ -1,0 +1,4 @@
+{:deps {seancorfield/depstar {:local/root "../.."}
+        org.clojure/tools.reader {:mvn/version "RELEASE"}}
+ :aliases {:test {:extra-paths ["test"]}
+           :uberjar {:main-opts ["-m" "hf.depstar.uberjar" "foo.jar"]}}}
