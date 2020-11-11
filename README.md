@@ -2,13 +2,13 @@
 
 <img src="./depstar_logo.png" />
 
-Builds JARs, uberjars, does AOT, manifest generation, etc for deps.edn projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced).
+Builds JARs, uberjars, does AOT, manifest generation, etc for `deps.edn` projects (forked from [healthfinch/depstar](https://github.com/healthfinch/depstar) and enhanced).
 
 For support, help, general questions, use the [#depstar channel on the Clojurians Slack](https://app.slack.com/client/T03RZGPFR/C01AK5V8HPT).
 
 # Basic Usage
 
-> Note: these instructions assume you have at least version 1.10.1.697 of the Clojure CLI installed -- otherwise you'll need to use `-A` instead of `-M`.
+> Note: these instructions assume you have at least version 1.10.1.727 of the Clojure CLI installed.
 
 Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn`:
 
@@ -16,14 +16,16 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.1.133"}}}}
+                 {seancorfield/depstar {:mvn/version "1.1.133"}}
+               :ns-default hf.depstar
+               :exec-args {}}}
 }
 ```
 
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
-clojure -M:depstar -m hf.depstar.jar MyLib.jar
+clojure -X:depstar jar :jar MyLib.jar
 ```
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
@@ -31,7 +33,7 @@ If you want to deploy a library to Clojars (or Maven Central), you're going to a
 Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
-clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -X:depstar uberjar :jar MyProject.jar
 ```
 
 An uberjar created by that command can be run as follows:
@@ -42,7 +44,7 @@ java -cp MyProject.jar clojure.main -m project.core
 
 If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the sections below for more information about both of those.
 
-If you want to see all of the files that are being copied into the JAR file, add `-v` or `--verbose` before or after the JAR filename.
+If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
 
 ## Classpath
 
@@ -57,58 +59,56 @@ For example, you can add web assets into an uberjar by including an alias in you
 Then invoke `depstar` with the chosen aliases:
 
 ```bash
-clojure -M:depstar:webassets -m hf.depstar.uberjar MyProject.jar
+clojure -X:depstar:webassets uberjar :jar MyProject.jar
 ```
 
 You can also pass an explicit classpath into `depstar` and it will use that instead of the (current) runtime classpath for building the JAR:
 
 ```bash
-clojure -M:depstar -m hf.depstar.uberjar --classpath "$(clojure -Spath -A:webassets)" MyProject.jar
+clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
 ```
-
-`--classpath` can be abbreviated to `-P`.
 
 ## `pom.xml`
 
-If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `-m` / `--main` option below, `clojure.main` if omitted).
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted).
 
-You can suppress the consumption of the `pom.xml` file with the `-n` / `--no-pom` option.
+You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
 
-Note that `depstar` does no AOT compilation by default -- use the `-C` / `--compile` option to enable AOT compilation (see below).
+Note that `depstar` does no AOT compilation by default -- use the `:aot true` option to enable AOT compilation (see below).
 
 If you build an uberjar, you can run the resulting file as follows:
 
 ```bash
-clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -X:depstar uberjar :jar MyProject.jar
 java -cp MyProject.jar clojure.main -m project.core
 ```
 
-If you build an uberjar with a `pom.xml` file present and do not specify `-n` / `--no-pom`, so that a manifest is included, you can run the resulting file as follows:
+If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, so that a manifest is included, you can run the resulting file as follows:
 
 ```bash
 # generate pom.xml (or create it manually)
 clojure -Spom
 # build the uberjar without AOT compilation
-clojure -M:depstar -m hf.depstar.uberjar MyProject.jar
+clojure -X:depstar uberjar :jar MyProject.jar
 # Main-Class: clojure.main
 java -jar MyProject.jar -m project.core
 ```
 
 ## AOT Compilation
 
-Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `-m` / `--main` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`).
-As of 0.4.0, you can ask `depstar` to compile your main namespace via the `-C` / `--compile` option:
+Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `:main-class` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`).
+As of 0.4.0, you can ask `depstar` to compile your main namespace via the `:aot true` option:
 
 ```bash
 # generate pom.xml (or create it manually)
 clojure -Spom
 # build the uberjar with AOT compilation
-clojure -M:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
+clojure -X:depstar uberjar :jar MyProject.jar :aot true :main-class project.core
 # Main-Class: project.core
 java -jar MyProject.jar
 ```
 
-This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `-P` / `--classpath` -- see above), build the uberjar based on the `pom.xml` file, including everything on the classpath, with a manifest specifying `project.core` as the main class.
+This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar based on the `pom.xml` file, including everything on the classpath, with a manifest specifying `project.core` as the main class.
 
 Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources).
 
@@ -116,9 +116,9 @@ Remember that AOT compilation is transitive so, in addition to your `project.cor
 
 ## Excluding Files
 
-The `-X` / `--exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `--exclude "clojure/core/specs/alpha.*"` -- note `.*` at the end so it matches the entire filename.
+The `:exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `:exclude '"clojure/core/specs/alpha.*"'` -- note `.*` at the end so it matches the entire filename.
 
-## `clojure -X` Usage
+## Other Options
 
 The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function) in the Deps and CLI reference for details.
 
@@ -133,14 +133,6 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
-
-The following commands would be equivalent:
-
-```bash
-clojure -M:depstar -m hf.depstar.uberjar MyProject.jar -C -m project.core
-
-clojure -X:depstar hf.depstar.uberjar/run :jar MyProject.jar :aot true :main-class project.core
-```
 
 You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
 
@@ -171,7 +163,7 @@ For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProj
 
 ## Debugging `depstar` Behavior
 
-If you are seeing unexpected results with `depstar` and the `-v` / `--verbose` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
+If you are seeing unexpected results with `depstar` and the `:verbose true` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
 
 # Deploying a Library
 
