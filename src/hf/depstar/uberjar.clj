@@ -434,7 +434,7 @@
     * `:copy-failure` -- one or more files could not be copied into the JAR
   More detail about success and failure is printed to stdout."
   [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
-           no-pom verbose]
+           no-pom pom-file verbose]
     :or {jar-type :uber}
     :as options}]
 
@@ -454,14 +454,14 @@
                            :jar-type   jar-type
                            :main-class main-class)
          ^File
-         pom-file (io/file "pom.xml")
+         pom-file (io/file (or pom-file "pom.xml"))
          do-aot
          (if main-class
            (cond (= :thin jar-type)
                  (println "Ignoring -m / --main because a 'thin' JAR was requested!")
                  no-pom
                  (println "Ignoring -m / --main because -n / --no-pom was specified!")
-                 (not (.exists (io/file "pom.xml")))
+                 (not (.exists pom-file))
                  (println "Ignoring -m / --main because no 'pom.xml' file is present!")
                  :else
                  aot)

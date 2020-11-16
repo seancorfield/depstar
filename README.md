@@ -16,7 +16,7 @@ Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn
 {
   :aliases {:depstar
               {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.1.133"}}
+                 {seancorfield/depstar {:mvn/version "1.1.136"}}
                :ns-default hf.depstar
                :exec-args {}}}
 }
@@ -94,6 +94,8 @@ clojure -X:depstar uberjar :jar MyProject.jar
 java -jar MyProject.jar -m project.core
 ```
 
+As of 1.1.136, you can use the `:pom-file` exec argument to specify a path to the `pom.xml` file if it is not in the current directory.
+
 ## AOT Compilation
 
 Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `:main-class` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`).
@@ -132,13 +134,14 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
+* `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path); there is no equivalent `:main-opts` flag for this
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
 
 You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.133"}}
+  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.136"}}
             :exec-fn hf.depstar.uberjar/run
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -214,7 +217,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 1.1.133
+Latest stable release: 1.1.136
 
 # License
 

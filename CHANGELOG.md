@@ -1,5 +1,8 @@
 # Changes
 
+* 1.1.136 -- 2020-11-16
+  * Fix #46 by adding `:pom-file` exec argument to specify a `pom.xml` file in a non-standard location, e.g., `:pom-file '"/tmp/pom.xml"'` -- there is no equivalent `:main-opts` flag for this, you have to use the CLI's `-X` invocation to supply it.
+
 * 1.1.133 -- 2020-11-07
   * Fix #45 by refactoring `hf.depstar.uberjar/run` so there's a REPL-friendly/library version of the function as `hf.depstar.uberjar/run*`.
 
