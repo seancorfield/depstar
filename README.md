@@ -10,7 +10,7 @@ For support, help, general questions, use the [#depstar channel on the Clojurian
 
 > Note: these instructions assume you have at least version 1.10.1.727 of the Clojure CLI installed.
 
-Install this tool to an alias in `$PROJECT/deps.edn` or `$HOME/.clojure/deps.edn`:
+Install this tool to an alias in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
 ```clj
 {
