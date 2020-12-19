@@ -2,6 +2,7 @@
 *~
 .java-version
 .cpcache
+.socket-repl-port
 *.jar
 /classes
 /target

@@ -22,6 +22,8 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 }
 ```
 
+> Note: `depstar` 1.x requires use of `:extra-deps` but 2.0 will support using `:replace-deps` instead.
+
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
@@ -47,6 +49,8 @@ If you want to be able to use `java -jar` to run your uberjar, you'll need to sp
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
 
 ## Classpath
+
+> Note: in `depstar` 2.0, the classpath will be computed from the system, user, and project `deps.edn` files, rather than using the classpath by which `depstar` itself is invoked. This will change how you specify additional aliases to add things to the JAR.
 
 By default, `depstar` uses the classpath computed by `clojure`.
 For example, you can add web assets into an uberjar by including an alias in your `deps.edn`:

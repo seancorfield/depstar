@@ -1,7 +1,9 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.7.0"}}
+ :deps {org.clojure/clojure {:mvn/version "1.10.1"}
+        org.clojure/tools.deps.alpha {:mvn/version "0.9.857"}}
  :aliases {:test {:main-opts ["-m" "hf.depstar.uberjar" "depstar-standalone.jar"
                               "-C" "-m" "hf.depstar.uberjar"]}
+           :trial {:replace-deps {selmer/selmer {:mvn/version "RELEASE"}}}
            :jar {:main-opts ["-m" "hf.depstar.jar" "depstar.jar"]}
            :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "depstar.jar"]}}}

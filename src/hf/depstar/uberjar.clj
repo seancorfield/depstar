@@ -1,7 +1,8 @@
 (ns hf.depstar.uberjar
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str])
+            [clojure.string :as str]
+            [clojure.tools.deps.alpha :as t])
   (:import (java.io File InputStream PushbackReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
@@ -324,19 +325,34 @@
   [src dest options]
   (copy-source* src dest options))
 
+(defn- calc-classpath
+  "Given the options map, use tools.deps.alpha to read and merge the
+  applicable `deps.edn` files, combine the specified aliases, calculate
+  the project basis (which will resolve/download dependencies), and
+  return a vector of items on the classpath."
+  [{:keys [aliases repro]
+    :or {aliases [] repro true}}]
+  (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)
+        deps     (t/merge-edns (if repro
+                                 [root-edn project-edn]
+                                 [root-edn user-edn project-edn]))
+        combined (t/combine-aliases deps aliases)
+        ;; this could be cleaner, by only selecting the "relevant"
+        ;; keys from combined for each of these three uses (but
+        ;; I'm waiting for the dust to settle on a possible higher-
+        ;; level API appearing in tools.deps.alpha itself):
+        basis    (t/calc-basis (t/tool deps combined)
+                               {:resolve-args   combined
+                                :classpath-args combined})]
+    (:classpath-roots basis)))
+
+(comment
+  (calc-classpath {})
+  (calc-classpath {:aliases [:trial]})
+  ,)
+
 (defn- parse-classpath [^String cp]
   (vec (.split cp (System/getProperty "path.separator"))))
-
-(defn- current-classpath
-  []
-  (System/getProperty "java.class.path"))
-
-(defn- depstar-itself?
-  "We ignore any classpath item that seems to be ourselves.
-
-  This might be overly aggressive but no one has complained so far."
-  [p]
-  (re-find #"depstar" p))
 
 (defn- first-by-tag
   [pom-text tag]
@@ -471,11 +487,9 @@
          tmp-c-dir (when do-aot
                      (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
          tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
-         cp        (or classpath (current-classpath))
-         cp        (parse-classpath cp)
-         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir)))
-                         (remove depstar-itself?)
-                         cp)
+         cp        (or (some-> classpath (parse-classpath))
+                       (calc-classpath options))
+         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
          dest-name (str/replace jar #"^.*[/\\]" "")
          jar-path  (.resolve tmp-z-dir ^String dest-name)
          jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
