@@ -12,6 +12,20 @@ For support, help, general questions, use the [#depstar channel on the Clojurian
 
 Install this tool to an alias in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
+For `depstar` 2.x:
+
+```clj
+{
+  :aliases {:depstar
+              {:replace-deps ; tool usage is new in 2.x
+                 {seancorfield/depstar {:mvn/version "1.1.136"}}
+               :ns-default hf.depstar
+               :exec-args {}}}
+}
+```
+
+For `depstar` 1.x:
+
 ```clj
 {
   :aliases {:depstar
@@ -21,8 +35,6 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
                :exec-args {}}}
 }
 ```
-
-> Note: `depstar` 1.x requires use of `:extra-deps` but 2.0 will support using `:replace-deps` instead.
 
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
@@ -50,10 +62,15 @@ If you want to see all of the files that are being copied into the JAR file, add
 
 ## Classpath
 
-> Note: in `depstar` 2.0, the classpath will be computed from the system, user, and project `deps.edn` files, rather than using the classpath by which `depstar` itself is invoked. This will change how you specify additional aliases to add things to the JAR.
+`depstar` walks the classpath to find resources to add to the JAR:
 
-By default, `depstar` uses the classpath computed by `clojure`.
-For example, you can add web assets into an uberjar by including an alias in your `deps.edn`:
+* For each directory on the classpath, the contents of that directory are copied (recursively) to the output JAR as individual files.
+* If `:jar-type :thin` (via the `hf.depstar/jar` exec-fn), JAR files on the classpath are ignored, otherwise (`:jar-type :uber`, via the `hf.depstar/uberjar` exec-fn), each JAR file on the classpath is expanded and its contents are copied to the output JAR as individual files.
+* Other types of files on the classpath are ignored (a warning is printed unless the file is on the excluded list, see below).
+
+As of `depstar` 2.0, the classpath is computed from the system and project `deps.edn` files. If `:repro false`, the user `deps.edn` file is also used. _This is intended to correspond to the CLI's `-Srepro` option that ignores the user `deps.edn` file._ If you need to adjust that classpath, based on aliases, you can supply a vector of aliases to the `:aliases` exec argument of `depstar`.
+
+For example, you can add web assets into an uberjar by including an alias in your project `deps.edn`:
 
 ```clj
 {:paths ["src"]
@@ -63,14 +80,22 @@ For example, you can add web assets into an uberjar by including an alias in you
 Then invoke `depstar` with the chosen aliases:
 
 ```bash
-clojure -X:depstar:webassets uberjar :jar MyProject.jar
+clojure -X:depstar uberjar :jar MyProject.jar :aliases '[:webassets]'
 ```
 
-You can also pass an explicit classpath into `depstar` and it will use that instead of the (current) runtime classpath for building the JAR:
+You can also pass an explicit classpath into `depstar` and it will use that instead of the computed classpath for building the JAR:
 
 ```bash
 clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
 ```
+
+In `depstar` 1.x, the current runtime classpath is used by default instead of being computed from the `deps.edn` files. Accordingly, to add `:webassets` to the JAR file, you would use the following command:
+
+```bash
+clojure -X:depstar:webassets uberjar :jar MyProject.jar
+```
+
+> Note: this type of invocation does not work with `depstar` 2.0.
 
 ## `pom.xml`
 
@@ -122,23 +147,34 @@ Remember that AOT compilation is transitive so, in addition to your `project.cor
 
 ## Excluding Files
 
-The `:exclude` option can be used to provide one or more regex patterns that will be used to exclude unwanted files from the JAR. Note that the string provided will be treated as a regex (via `re-pattern`) that should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `:exclude '"clojure/core/specs/alpha.*"'` -- note `.*` at the end so it matches the entire filename.
+By default, the following files are excluded from the output JAR:
+
+* `project.clj`
+* `.keep`
+* `**/*.pom`
+* `module-info.class`
+* `META-INF/**/*.MF`, also `*.SF`, `*.RSA`, and `*.DSA`
+* `META-INF/INDEX.LIST`, `META-INF/DEPENDENCIES`, optionally with `.txt` suffix
+
+In addition, `depstar` accepts an `:exclude` option: a vector of strings to use as regular expressions to match other files to be excluded. `re-matches` is used so these should be a _complete match for the full relative path and filename_. For example, if you wanted to exclude `clojure.core.specs.alpha` code from your JAR, you would specify `:exclude '"clojure/core/specs/alpha.*"'` -- note `.*` at the end so it matches the entire filename.
 
 ## Other Options
 
 The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function) in the Deps and CLI reference for details.
 
-As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments:
+As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments (not all exec arguments have a command-line equivalent yet):
 
+* `:aliases` -- if specified, a vector of aliases to use while computing the classpath roots from the `deps.edn` files
 * `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them)
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
-* `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar.jar/run` and to `:uber` for `hf.depstar.uberjar/run` (and can therefore be omitted in most cases)
+* `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path); there is no equivalent `:main-opts` flag for this
+* `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
 
 You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
@@ -146,7 +182,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
   :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.136"}}
-            :exec-fn hf.depstar.uberjar/run
+            :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
                         :main-class project.core}}
@@ -166,7 +202,7 @@ clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
 
 For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
 
-> Note: currently, uberjars built via `-X` will include `org.clojure/tools.deps.alpha` even if it is not a dependency of your project. If that matters, use the `-M` approach above. This will be addressed in `depstar` 2.0.
+> Note: if you used `-X` with `depstar` 1.x to build an uberjar, it would include `org.clojure/tools.deps.alpha` even if it was not a dependency of your project.
 
 ## Debugging `depstar` Behavior
 
@@ -182,7 +218,7 @@ After you've generated your JAR file as above with a `pom.xml` file, you can use
 mvn deploy:deploy-file -Dfile=MyProject.jar -DpomFile=pom.xml -DrepositoryId=clojars -Durl=https://clojars.org/repo/
 ```
 
-This assumes that you have credentials for your chosen repository in your `~/.m2/settings.xml` file. It should look like this (with your username and password):
+This assumes that you have credentials for your chosen repository in your `~/.m2/settings.xml` file. It should look like this (with your username and **token**):
 
 ```xml
 <settings>
@@ -212,7 +248,7 @@ Add the following alias to your `deps.edn` file:
 ```clojure
     ;; version 0.1.1 was the most recent as of 2020-10-09:
     :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
-             :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "MyProject.jar"]}}}
+             :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "MyProject.jar"]}
 ```
 
 This expects your Clojars username to be in the `CLOJARS_USERNAME` environment variable and your Clojars **token** to be in the `CLOJARS_PASSWORD` environment variable.
