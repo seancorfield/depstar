@@ -103,13 +103,13 @@
 (defmulti clash (fn [filename _in _target]
                   (let [strategy (clash-strategy filename)]
                     (when *debug-clash*
-                      (println "Found" filename "in multiple dependencies,"
-                               (case strategy
-                                 :merge-edn      "merged as EDN."
-                                 :concat-lines   "concatenated it."
-                                 :concat-no-dupe "concatenated (if not dupe)."
-                                 :log4j2-surgery "selecting the largest."
-                                 :noop           "ignoring duplicate.")))
+                      (logger/info "Found" filename "in multiple dependencies,"
+                                   (case strategy
+                                     :merge-edn      "merged as EDN."
+                                     :concat-lines   "concatenated it."
+                                     :concat-no-dupe "concatenated (if not dupe)."
+                                     :log4j2-surgery "selecting the largest."
+                                     :noop           "ignoring duplicate.")))
                     strategy)))
 
 (defmethod clash
@@ -168,15 +168,15 @@
   (if @ok-to-overwrite-idiotic-log4j2-file
     (do
       (when *debug*
-        (println "overwriting" filename))
+        (logger/info "overwriting" filename))
       (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
       (when (< idiotic-log4j2-plugins-size (Files/size target))
         ;; we've copied a big enough file, stop overwriting it!
         (when *debug*
-          (println "big enough -- no more copying!"))
+          (logger/info "big enough -- no more copying!"))
         (reset! ok-to-overwrite-idiotic-log4j2-file false)))
     (when *debug*
-      (println "ignoring" filename))))
+      (logger/info "ignoring" filename))))
 
 (defmethod clash
   :default
@@ -217,11 +217,11 @@
         ;; record first Log4j2Plugins.dat file:
         (when (= idiotic-log4j2-plugins-file filename)
           (when *debug*
-            (println "copied" filename (Files/size target)))
+            (logger/info "copied" filename (Files/size target)))
           (when (< idiotic-log4j2-plugins-size (Files/size target))
             ;; we've copied a big enough file, stop overwriting it!
             (when *debug*
-              (println "big enough -- no more copying!"))
+              (logger/info "big enough -- no more copying!"))
             (reset! ok-to-overwrite-idiotic-log4j2-file false)))
         (when last-mod
           (Files/setLastModifiedTime target last-mod))))
@@ -396,9 +396,9 @@
                        :artifact-id artifact-id
                        :version version})))
     (when *verbose* (println ""))
-    (println "Processing pom.xml for"
-             (str "{" group-id "/" artifact-id
-                  " {:mvn/version \"" version "\"}}"))
+    (logger/info "Processing pom.xml for"
+                 (str "{" group-id "/" artifact-id
+                      " {:mvn/version \"" version "\"}}"))
     (with-open [is (io/input-stream (.getBytes manifest))]
       (when *verbose*
         (println "\nGenerating META-INF/MANIFEST.MF:\n")
@@ -477,15 +477,15 @@
          do-aot
          (if main-class
            (cond (= :thin jar-type)
-                 (println "Ignoring -m / --main because a 'thin' JAR was requested!")
+                 (logger/warn "Ignoring -m / --main because a 'thin' JAR was requested!")
                  no-pom
-                 (println "Ignoring -m / --main because -n / --no-pom was specified!")
+                 (logger/warn "Ignoring -m / --main because -n / --no-pom was specified!")
                  (not (.exists pom-file))
-                 (println "Ignoring -m / --main because no 'pom.xml' file is present!")
+                 (logger/warn "Ignoring -m / --main because no 'pom.xml' file is present!")
                  :else
                  aot)
            (when aot
-             (println "Ignoring -C / --compile because -m / --main was not specified!")))
+             (logger/warn "Ignoring -C / --compile because -m / --main was not specified!")))
 
          tmp-c-dir (when do-aot
                      (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
@@ -502,15 +502,15 @@
          aot-failure
          (when do-aot
            (try
-             (println "Compiling" main-class "...")
+             (logger/info "Compiling" main-class "...")
              (binding [*compile-path* (str tmp-c-dir)]
                (compile (symbol main-class)))
              false ; no AOT failure
              (catch Throwable t
-               (println (str "\nCompilation of " main-class " failed!\n"
-                             "\n" (.getMessage t)
-                             (when-let [^Throwable c (.getCause t)]
-                               (str "\nCaused by: " (.getMessage c)))))
+               (logger/error (str "Compilation of " main-class " failed!"))
+               (logger/error (.getMessage t))
+               (when-let [^Throwable c (.getCause t)]
+                 (logger/error "Caused by: " (.getMessage c)))
                true)))]
 
      (if aot-failure
@@ -523,7 +523,7 @@
            (let [tmp (.getPath zfs "/" (make-array String 0))]
              (reset! errors 0)
              (reset! multi-release? false)
-             (println "Building" (name jar-type) "jar:" jar)
+             (logger/info "Building" (name jar-type) "jar:" jar)
              (binding [*debug* (env-prop "debug")
                        *exclude* (mapv re-pattern exclude)
                        *debug-clash* debug-clash
@@ -570,7 +570,7 @@
           :help         (print-help)
           :no-jar       (print-help)
           :aot-failed   nil ; details already printed
-          :copy-failure (println "\nCompleted with errors!"))
+          :copy-failure (logger/error "Completed with errors!"))
         (System/exit 1)))))
 
 (defn run
@@ -590,10 +590,10 @@
                            (and (contains? new-arg :jar)
                                 (contains? opts :jar))
                            (do
-                             (println "Multiple JAR files specified:"
-                                      (:jar opts) "and" (:jar new-arg))
-                             (println "Ignoring" (:jar opts)
-                                      "and using" (:jar new-arg) "\n")
+                             (logger/warn "Multiple JAR files specified:"
+                                          (:jar opts) "and" (:jar new-arg))
+                             (logger/warn "Ignoring" (:jar opts)
+                                          "and using" (:jar new-arg) "\n")
                              (merge opts new-arg))
                            :else
                            (merge opts new-arg)))]
@@ -613,7 +613,7 @@
                 ("-X" "--exclude")   [{:exclude (fnext args)} (nnext args)]
                 (if (= \- (ffirst args))
                   (do
-                    (println "Unknown option" (first args) "ignored!")
+                    (logger/warn "Unknown option" (first args) "ignored!")
                     [{} (next args)])
                   [{:jar (first args)} (next args)]))]
           (recur (merge-args opts arg) more))
