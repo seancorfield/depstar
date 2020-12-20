@@ -181,7 +181,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:extra-deps {seancorfield/depstar {:mvn/version "1.1.136"}}
+  :uberjar {:replace-deps {seancorfield/depstar {:mvn/version "1.1.136"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true

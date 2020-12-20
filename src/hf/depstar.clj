@@ -11,7 +11,7 @@
 
   In `:aliases`:
 ```clojure
-      :jar {:extra-deps {seancorfield/depstar {:mvn/version ...}}
+      :jar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
             :exec-fn hf.depstar/jar
             :exec-args {}}
 ```
@@ -22,13 +22,13 @@
   If the destination JAR file is fixed, it could be added to `:exec-args` in
   `deps.edn`:
 ```clojure
-      :jar {:extra-deps {seancorfield/depstar {:mvn/version ...}}
+      :jar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
             :exec-fn hf.depstar/jar
             :exec-args {:jar MyProject.jar}}
 ```
   `:jar` can be specified as a symbol or a string."
   [options]
-  (uber/run (merge {:jar-type :thin} options)))
+  (uber/build-jar-as-main (merge {:jar-type :thin} options)))
 
 (defn uberjar
   "Generic entry point for uberjar invocations.
@@ -37,7 +37,7 @@
 
   In `:aliases`:
 ```clojure
-      :uberjar {:extra-deps {seancorfield/depstar {:mvn/version ...}}
+      :uberjar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
                 :exec-fn hf.depstar/uberjar
                 :exec-args {}}
 ```
@@ -49,7 +49,7 @@
   they could be added to `:exec-args` in
   `deps.edn`:
 ```clojure
-      :uberjar {:extra-deps {seancorfield/depstar {:mvn/version ...}}
+      :uberjar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
                 :exec-fn hf.depstar/uberjar
                 :exec-args {:aot true
                             :jar MyProject.jar
@@ -57,4 +57,4 @@
 ```
   `:jar` can be specified as a symbol or a string."
   [options]
-  (uber/run (merge {:jar-type :uber} options)))
+  (uber/build-jar-as-main (merge {:jar-type :uber} options)))

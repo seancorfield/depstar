@@ -1,13 +1,14 @@
 # Changes
 
 * 2.0.x in progress
-  * `depstar` now behaves like a "tool" rather than a "library" -- you can use `:replace-deps` to specify it as a dependency rather than `:extra-deps` and it will compute the project basis from the system, user, and project `deps.edn` files using `clojure.tools.deps.alpha`. By default, it applies no aliases but you can specify an `:aliases` exec-arg with a vector of aliases to apply. By default, it behaves like the CLI's `-Srepro` option in that the user `deps.edn` file is ignored: specify `:repro false` if you want the user `deps.edn` file to be included in the basis. Fixes #47, #48, #49.
+  * `depstar` now behaves like a "tool" rather than a "library" -- you should use `:replace-deps` to specify it as a dependency rather than `:extra-deps` and it will compute the project basis from the system, user, and project `deps.edn` files using `clojure.tools.deps.alpha`. By default, it applies no aliases but you can specify an `:aliases` exec-arg with a vector of aliases to apply. By default, it behaves like the CLI's `-Srepro` option in that the user `deps.edn` file is ignored: specify `:repro false` if you want the user `deps.edn` file to be included in the basis. Fixes #47, #48, #49.
+  * Supported entry points: `hf.depstar/jar` and `hf.depstar/uberjar` via `-X`, `hf.depstar.uberjar/build-jar` via REPL or library usage. The following legacy entry points are all deprecated: `hf.depstar.jar/-main`, `hf.depstar.jar/run`, `hf.depstar.uberjar/-main`, `hf.depstar.uberjar/run`, and `hf.depstar.uberjar/run*`.
 
 * 1.1.136 -- 2020-11-16
   * Fix #46 by adding `:pom-file` exec argument to specify a `pom.xml` file in a non-standard location, e.g., `:pom-file '"/tmp/pom.xml"'` -- there is no equivalent `:main-opts` flag for this, you have to use the CLI's `-X` invocation to supply it.
 
 * 1.1.133 -- 2020-11-07
-  * Fix #45 by refactoring `hf.depstar.uberjar/run` so there's a REPL-friendly/library version of the function as `hf.depstar.uberjar/run*`.
+  * Fix #45 by providing a REPL-friendly/library entry point as `hf.depstar.uberjar/build-jar`. _[this was originally `hf.depstar.uberjar/run*`]_
 
 * 1.1.132 -- 2020-10-19
   * Call `shutdown-agents` at the end of processing, to account for AOT of badly-behaved code that has side-effecting top-level forms.
@@ -29,7 +30,7 @@
 
 * 1.1.104 -- 2020-08-27
   * Fix #37 by adding `-X` / `--exclude` to provide one or more regex used to exclude files from the JAR.
-  * Fix #35 by providing `hf.depstar.jar/run` and `hf.depstar.uberjar/run` as entry points that can be used by the Clojure CLI `-X` option (to execute a specific function and pass a map of arguments).
+  * Fix #35 by providing `hf.depstar/jar` and `hf.depstar/uberjar` as entry points that can be used by the Clojure CLI `-X` option (to execute a specific function and pass a map of arguments). _[these were originally `hf.depstar/jar` and `hf.depstar/uberjar`]_
   * Fix #34 by adding `-P` / `--classpath` option to specify a classpath to use (based on PR #36 @borkdude).
   * Fix #33 by allowing destination JAR filename to appear anywhere on the command-line as well as adding a `-J` / `--jar` option for it.
   * Address #31 by clarifying in the README that `(:gen-class)` is required for AOT.

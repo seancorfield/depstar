@@ -1,6 +1,7 @@
 (ns hf.depstar.uberjar
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.tools.logging :as logger]
             [clojure.string :as str]
             [clojure.tools.deps.alpha :as t])
   (:import (java.io File InputStream PushbackReader)
@@ -439,8 +440,9 @@
   (println "  -X / --exclude <regex> -- exclude files via regex")
   (println "note: the -C and -m options require a pom.xml file"))
 
-(defn run*
+(defn build-jar
   "Core functionality for depstar. Can be called from a REPL or as a library.
+
   Returns a hash map containing:
   * `:success` -- `true` or `false`
   * `:reason` -- if `:success` is `false`, this explains what failed:
@@ -448,7 +450,8 @@
     * `:no-jar` -- the `:jar` option was missing
     * `:aot-failed` -- `:compile` was requested but it threw an exception
     * `:copy-failure` -- one or more files could not be copied into the JAR
-  More detail about success and failure is printed to stdout."
+
+  Additional detail about success and failure is also logged."
   [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
            no-pom pom-file verbose]
     :or {jar-type :uber}
@@ -538,31 +541,28 @@
            {:success false :reason :copy-failures}
            {:success true}))))))
 
-(defn run
-  "Legacy entry point for uberjar invocations.
+(defn run*
+  "Deprecated entry point for REPL or library usage.
 
-  Can be used with `clojure -X`:
+  Returns a hash map containing:
+  * `:success` -- `true` or `false`
+  * `:reason` -- if `:success` is `false`, this explains what failed:
+    * `:help` -- help was requested
+    * `:no-jar` -- the `:jar` option was missing
+    * `:aot-failed` -- `:compile` was requested but it threw an exception
+    * `:copy-failure` -- one or more files could not be copied into the JAR
 
-  In `:aliases`:
-```clojure
-      :depstar {:extra-deps {seancorfield/depstar {:mvn/version ...}}}
-      :uberjar {:fn hf.depstar.uberjar/run
-                :args {:aot true}}
-```
-  Then run:
-```
-      clojure -R:depstar -X:uberjar :jar MyProject.jar :main-class project.core
-```
-  If the destination JAR file and main class are fixed, they could be
-  added to `:args` in `deps.edn`:
-```clojure
-      :depstar {:extra-deps {seancorfield/depstar {:mvn/version ...}}}
-      :uberjar {:fn hf.depstar.uberjar/run
-                :args {:aot true :jar MyProject.jar :main-class project.core}}
-```
-  Both `:jar` and `:main-class` can be specified as symbols or strings."
+  More detail about success and failure is printed to stdout."
   [options]
-  (let [result (run* options)]
+  (logger/warn "DEPRECATED: hf.depstar.uberjar/run* -- use hf.depstar.uberjar/build-jar instead.")
+  (build-jar options))
+
+(defn build-jar-as-main
+  "Command-line entry point for `-X` (and legacy `-M`) that performs
+  checking on arguments, offers help, and calls `(System/exit 1)` if
+  the JAR-building process encounters errors."
+  [options]
+  (let [result (build-jar options)]
     (if (:success result)
       (shutdown-agents)
       (do
@@ -572,6 +572,12 @@
           :aot-failed   nil ; details already printed
           :copy-failure (println "\nCompleted with errors!"))
         (System/exit 1)))))
+
+(defn run
+  "Deprecated entry point for uberjar invocations via `-X`."
+  [options]
+  (logger/warn "DEPRECATED: hf.depstar.uberjar/run -- use hf.depstar/uberjar instead.")
+  (build-jar-as-main options))
 
 (defn parse-args
   "Returns a hash map with all the options set from command-line args.
@@ -615,7 +621,8 @@
 
 (defn -main
   [& args]
-  (run (assoc (parse-args args) :jar-type :uber)))
+  (logger/warn "DEPRECATED: -M -m hf.depstar.uberjar -- use -X hf.depstar/uberjar instead.")
+  (build-jar-as-main (assoc (parse-args args) :jar-type :uber)))
 
 (comment
   (parse-args ["foo.jar" "-v"])

@@ -30,5 +30,5 @@
                         #(string/ends-with? % ".jar")))
 (s/def ::dest ::jarfile)
 
-(s/fdef u/run
+(s/fdef u/build-jar
         :args (s/cat :options (s/keys :req-un [::dest])))
