@@ -6,7 +6,7 @@
         org.slf4j/slf4j-simple {:mvn/version "1.7.30"}}
  :aliases {:test {:main-opts ["-m" "hf.depstar.uberjar" "depstar-standalone.jar"
                               "-C" "-m" "hf.depstar.uberjar"]}
-           :trial {:replace-deps {selmer/selmer {:mvn/version "RELEASE"}}}
-           :jar {:main-opts ["-m" "hf.depstar.jar" "depstar.jar"]}
+           :jar {:exec-fn hf.depstar/jar
+                 :exec-args {:jar depstar.jar}}
            :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "depstar.jar"]}}}
