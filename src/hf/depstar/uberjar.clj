@@ -1,10 +1,11 @@
 (ns hf.depstar.uberjar
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.tools.logging :as logger]
-            [clojure.tools.namespace.find :as tnsf]
             [clojure.string :as str]
-            [clojure.tools.deps.alpha :as t])
+            [clojure.tools.deps.alpha :as t]
+            [clojure.tools.deps.alpha.gen.pom :as pom]
+            [clojure.tools.logging :as logger]
+            [clojure.tools.namespace.find :as tnsf])
   (:import (java.io File InputStream PushbackReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
@@ -328,30 +329,29 @@
   [src dest options]
   (copy-source* src dest options))
 
-(defn- calc-classpath
+(defn- calc-project-basis
   "Given the options map, use tools.deps.alpha to read and merge the
   applicable `deps.edn` files, combine the specified aliases, calculate
   the project basis (which will resolve/download dependencies), and
-  return a vector of items on the classpath."
+  return the calculated project basis."
   [{:keys [aliases repro]
     :or {aliases [] repro true}}]
   (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)
         deps     (t/merge-edns (if repro
                                  [root-edn project-edn]
                                  [root-edn user-edn project-edn]))
-        combined (t/combine-aliases deps aliases)
-        ;; this could be cleaner, by only selecting the "relevant"
-        ;; keys from combined for each of these three uses (but
-        ;; I'm waiting for the dust to settle on a possible higher-
-        ;; level API appearing in tools.deps.alpha itself):
-        basis    (t/calc-basis (t/tool deps combined)
-                               {:resolve-args   combined
-                                :classpath-args combined})]
-    (:classpath-roots basis)))
+        combined (t/combine-aliases deps aliases)]
+    ;; this could be cleaner, by only selecting the "relevant"
+    ;; keys from combined for each of these three uses (but
+    ;; I'm waiting for the dust to settle on a possible higher-
+    ;; level API appearing in tools.deps.alpha itself):
+    (t/calc-basis (t/tool deps combined)
+                  {:resolve-args   combined
+                   :classpath-args combined})))
 
 (comment
-  (calc-classpath {})
-  (calc-classpath {:aliases [:trial]})
+  (calc-project-basis {})
+  (calc-project-basis {:aliases [:trial]})
   ,)
 
 (defn- parse-classpath [^String cp]
@@ -495,8 +495,9 @@
     * `:copy-failure` -- one or more files could not be copied into the JAR
 
   Additional detail about success and failure is also logged."
-  [{:keys [aot classpath compile-ns debug-clash exclude
-           help jar jar-type main-class no-pom pom-file verbose]
+  [{:keys [aot artifact-id classpath compile-ns debug-clash exclude
+           group-id help jar jar-type main-class no-pom pom-file
+           sync-pom verbose version]
     :or {jar-type :uber}
     :as options}]
 
@@ -515,8 +516,21 @@
                             :jar        jar
                             :jar-type   jar-type
                             :main-class main-class)
+          basis      (calc-project-basis options)
           ^File
           pom-file   (io/file (or pom-file "pom.xml"))
+          _
+          (when sync-pom
+            (logger/info "Synchronizing" (.getName pom-file))
+            (pom/sync-pom
+             {:basis basis
+              :params (cond-> {:target-dir (or (.getParent pom-file) ".")
+                               :src-pom    (.getPath pom-file)}
+                        (and group-id artifact-id)
+                        (assoc :lib (symbol (name group-id) (name artifact-id)))
+                        version
+                        (assoc :version version))}))
+          _ (.getParent (io/file "pom.xml"))
           do-aot
           (if main-class
             (cond (= :thin jar-type)
@@ -531,7 +545,7 @@
               (logger/warn "Ignoring :aot because -m / --main was not specified!")))
 
           cp         (or (some-> classpath (parse-classpath))
-                         (calc-classpath options))
+                         (:classpath-roots basis))
 
           ;; expand :all using tools.namespace:
           compile-ns (if (= :all compile-ns)

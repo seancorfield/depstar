@@ -99,11 +99,16 @@ clojure -X:depstar:webassets uberjar :jar MyProject.jar
 
 ## `pom.xml`
 
-If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted).
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted). You can specify `:pom-file` as an exec argument if you want to use a different pom file.
 
 You can also specify the `:group-id`, `:artifact-id`, and/or `:version` as exec arguments and those values will override what is in the `pom.xml` file. **The `pom.xml` file will be updated to reflect those values.** If the `pom.xml` file contains a VCS `<tag>..</tag>` that matches the version, with a prefix of `v`, it will also be updated (so `<version>` and `<tag>` will stay in sync).
 
 You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
+
+You can generate a minimal `pom.xml` file using the `clojure -Spom` command (and that will also update the dependencies in an existing `pom.xml` based on `deps.edn`). `depstar` 2.0 can run this for you, using the same computed project basis that it uses for building the JAR file: specify the `:sync-pom true` exec argument to perform this step:
+
+* If no `pom.xml` file exists (where `:pom-file` specifies or else in the current directory), you will also need to specify `:group-id`, `:artifact-id`, and `:version`, and a minimal pom file will be created.
+* If a `pom.xml` file already exists (per `:pom-file` or in the current directory), it will be updated to reflect the latest dependencies from the project basis, and any `:group-id`/`:artifact-id` pair and/or `:version` supplied as exec arguments.
 
 Note that `depstar` does no AOT compilation by default -- use the `:aot true` option to enable AOT compilation (see below).
 
@@ -117,10 +122,16 @@ java -cp MyProject.jar clojure.main -m project.core
 If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, so that a manifest is included, you can run the resulting file as follows:
 
 ```bash
-# generate pom.xml (or create it manually)
-clojure -Spom
+# if pom.xml file is already present:
 # build the uberjar without AOT compilation
 clojure -X:depstar uberjar :jar MyProject.jar
+
+# else ask depstar to create it for you:
+# build the uberjar without AOT compilation
+clojure -X:depstar uberjar :sync-pom true \
+        :group-id myname :artifact-id myproject \
+        :version '"1.2.3"' :jar MyProject.jar
+
 # Main-Class: clojure.main
 java -jar MyProject.jar -m project.core
 ```
@@ -186,6 +197,7 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the legacy `-n` / `--no-pom` option)
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
+* `:sync-pom` -- if `true`, will run the equivalent of `clojure -Spom` to create or update your `pom.xml` file prior to building the JAR file
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the legacy `-v` / `--verbose` option)
 * `:version` -- if specified, the symbol used for the `version` field in `pom.xml` and `pom.properties` when building the JAR file (and also for the VCS `tag` field if matches the current `version` field with a prefix of `v`); **your `pom.xml` file will be updated to match!**
 
