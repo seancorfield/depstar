@@ -21,7 +21,7 @@
 (def ^:dynamic ^:private *debug-clash* nil)
 (def ^:dynamic ^:private *verbose* nil)
 
-(defn env-prop
+(defn- env-prop
   "Given a setting name, get its Boolean value from the environment,
   validate it, and return the value (or nil if no setting is present)."
   [setting]
@@ -38,23 +38,23 @@
                          :env      (System/getenv env-setting)
                          :property (System/getProperty prop-setting)}))))))
 
-(defonce ^FileSystem FS (FileSystems/getDefault))
+(defonce ^:private ^FileSystem FS (FileSystems/getDefault))
 
 ;; could add (StandardOpenOption/valueOf "SYNC") here as well but that
 ;; could slow things down (and hasn't yet proved to be necessary)
-(def open-opts (into-array OpenOption [(StandardOpenOption/valueOf "CREATE")]))
+(def ^:private open-opts (into-array OpenOption [(StandardOpenOption/valueOf "CREATE")]))
 
-(def copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
+(def ^:private copy-opts (into-array CopyOption [(StandardCopyOption/valueOf "REPLACE_EXISTING")]))
 
-(def visit-opts (doto
-                 (java.util.HashSet.)
-                 (.add (FileVisitOption/valueOf "FOLLOW_LINKS"))))
+(def ^:private visit-opts (doto
+                            (java.util.HashSet.)
+                            (.add (FileVisitOption/valueOf "FOLLOW_LINKS"))))
 
-(defonce errors (atom 0))
+(defonce ^:private errors (atom 0))
 
-(defonce multi-release? (atom false))
+(defonce ^:private multi-release? (atom false))
 
-(defn path
+(defn- path
   ^Path [s]
   (.getPath FS s (make-array String 0)))
 
@@ -82,7 +82,7 @@
 (defn- legal-file? [filename]
   (re-find #"(?i)^(META-INF/)?(COPYRIGHT|NOTICE|LICENSE)(\.(txt|md))?$" filename))
 
-(defn clash-strategy
+(defn- clash-strategy
   [filename]
   (cond
     (re-find #"^data_readers.clj[sc]?$" filename)
@@ -100,17 +100,18 @@
     :else
     :noop))
 
-(defmulti clash (fn [filename _in _target]
-                  (let [strategy (clash-strategy filename)]
-                    (when *debug-clash*
-                      (logger/info "Found" filename "in multiple dependencies,"
-                                   (case strategy
-                                     :merge-edn      "merged as EDN."
-                                     :concat-lines   "concatenated it."
-                                     :concat-no-dupe "concatenated (if not dupe)."
-                                     :log4j2-surgery "selecting the largest."
-                                     :noop           "ignoring duplicate.")))
-                    strategy)))
+(defmulti ^:private clash
+  (fn [filename _in _target]
+    (let [strategy (clash-strategy filename)]
+      (when *debug-clash*
+        (logger/info "Found" filename "in multiple dependencies,"
+                     (case strategy
+                       :merge-edn      "merged as EDN."
+                       :concat-lines   "concatenated it."
+                       :concat-no-dupe "concatenated (if not dupe)."
+                       :log4j2-surgery "selecting the largest."
+                       :noop           "ignoring duplicate.")))
+      strategy)))
 
 (defmethod clash
   :merge-edn
@@ -193,12 +194,12 @@
    #"(?i)META-INF/.*\.(?:MF|SF|RSA|DSA)"
    #"(?i)META-INF/(?:INDEX\.LIST|DEPENDENCIES)(?:\.txt)?"])
 
-(defn excluded?
+(defn- excluded?
   [filename]
   (or (some #(re-matches % filename) exclude-patterns)
       (some #(re-matches % filename) *exclude*)))
 
-(defn copy!
+(defn- copy!
   ;; filename drives strategy
   [filename ^InputStream in ^Path target last-mod]
   (if-not (excluded? filename)
@@ -228,7 +229,7 @@
     (when *debug*
       (prn {:excluded filename}))))
 
-(defn consume-jar
+(defn- consume-jar
   [^Path path f]
   (with-open [is (-> path
                      (Files/newInputStream (make-array OpenOption 0))
@@ -239,7 +240,7 @@
         (f is entry)
         (recur)))))
 
-(defn classify
+(defn- classify
   [entry]
   (let [p (path entry)
         symlink-opts (make-array LinkOption 0)]
@@ -255,7 +256,7 @@
         :else :unknown)
       :not-found)))
 
-(defmulti copy-source*
+(defmulti ^:private copy-source*
   (fn [src _dest _options]
     (classify src)))
 
@@ -283,7 +284,7 @@
                         :message (.getMessage t)})
                   (swap! errors inc))))))))))
 
-(defn copy-directory
+(defn- copy-directory
   [^Path src ^Path dest]
   (let [copy-dir
         (reify FileVisitor
@@ -322,7 +323,7 @@
     (when *debug* (prn {:excluded src}))
     (prn {:warning "ignoring unknown file type" :path src})))
 
-(defn copy-source
+(defn- copy-source
   [src dest options]
   (copy-source* src dest options))
 
@@ -452,8 +453,8 @@
     * `:copy-failure` -- one or more files could not be copied into the JAR
 
   Additional detail about success and failure is also logged."
-  [{:keys [aot classpath debug-clash exclude help jar jar-type main-class
-           no-pom pom-file verbose]
+  [{:keys [aot classpath compile-ns debug-clash exclude
+           help jar jar-type main-class no-pom pom-file verbose]
     :or {jar-type :uber}
     :as options}]
 
@@ -473,19 +474,24 @@
                            :jar-type   jar-type
                            :main-class main-class)
          ^File
-         pom-file (io/file (or pom-file "pom.xml"))
+         pom-file   (io/file (or pom-file "pom.xml"))
          do-aot
          (if main-class
            (cond (= :thin jar-type)
-                 (logger/warn "Ignoring -m / --main because a 'thin' JAR was requested!")
+                 (logger/warn "Ignoring :main-class because a 'thin' JAR was requested!")
                  no-pom
-                 (logger/warn "Ignoring -m / --main because -n / --no-pom was specified!")
+                 (logger/warn "Ignoring :main-class because :no-pom was specified!")
                  (not (.exists pom-file))
-                 (logger/warn "Ignoring -m / --main because no 'pom.xml' file is present!")
+                 (logger/warn "Ignoring :main-class because no 'pom.xml' file is present!")
                  :else
                  aot)
            (when aot
-             (logger/warn "Ignoring -C / --compile because -m / --main was not specified!")))
+             (logger/warn "Ignoring :aot / :compile-ns because -m / --main was not specified!")))
+
+         ;; force AOT if compile-ns explicitly requested:
+         do-aot     (or do-aot (seq compile-ns))
+         ;; compile main-class at least (if also do-aot):
+         compile-ns (or compile-ns [main-class])
 
          tmp-c-dir (when do-aot
                      (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
@@ -501,17 +507,18 @@
                          (.put "encoding" "UTF-8"))
          aot-failure
          (when do-aot
-           (try
-             (logger/info "Compiling" main-class "...")
-             (binding [*compile-path* (str tmp-c-dir)]
-               (compile (symbol main-class)))
-             false ; no AOT failure
-             (catch Throwable t
-               (logger/error (str "Compilation of " main-class " failed!"))
-               (logger/error (.getMessage t))
-               (when-let [^Throwable c (.getCause t)]
-                 (logger/error "Caused by: " (.getMessage c)))
-               true)))]
+           (some #(try
+                    (logger/info "Compiling" % "...")
+                    (binding [*compile-path* (str tmp-c-dir)]
+                      (compile (symbol %)))
+                    false ; no AOT failure
+                    (catch Throwable t
+                      (logger/error (str "Compilation of " % " failed!"))
+                      (logger/error (.getMessage t))
+                      (when-let [^Throwable c (.getCause t)]
+                        (logger/error "Caused by: " (.getMessage c)))
+                      true))
+                 compile-ns))]
 
      (if aot-failure
 
@@ -541,7 +548,7 @@
            {:success false :reason :copy-failures}
            {:success true}))))))
 
-(defn run*
+(defn ^:no-doc run*
   "Deprecated entry point for REPL or library usage.
 
   Returns a hash map containing:
@@ -557,7 +564,7 @@
   (logger/warn "DEPRECATED: hf.depstar.uberjar/run* -- use hf.depstar.uberjar/build-jar instead.")
   (build-jar options))
 
-(defn build-jar-as-main
+(defn ^:no-doc build-jar-as-main
   "Command-line entry point for `-X` (and legacy `-M`) that performs
   checking on arguments, offers help, and calls `(System/exit 1)` if
   the JAR-building process encounters errors."
@@ -569,20 +576,20 @@
         (case (:reason result)
           :help         (print-help)
           :no-jar       (print-help)
-          :aot-failed   nil ; details already printed
+          :aot-failed   (logger/error "AOT FAILED") ;nil ; details already printed
           :copy-failure (logger/error "Completed with errors!"))
         (System/exit 1)))))
 
-(defn run
+(defn ^:no-doc run
   "Deprecated entry point for uberjar invocations via `-X`."
   [options]
   (logger/warn "DEPRECATED: hf.depstar.uberjar/run -- use hf.depstar/uberjar instead.")
   (build-jar-as-main options))
 
-(defn parse-args
+(defn ^:no-doc parse-args
   "Returns a hash map with all the options set from command-line args.
 
-  This is to avoid an external dependency on `clojure.tools.cli`."
+  Essentially deprecated since -M -m invocation is deprecated."
   [args]
   (let [merge-args (fn [opts new-arg]
                      (cond (contains? new-arg :exclude)
@@ -619,7 +626,8 @@
           (recur (merge-args opts arg) more))
         opts))))
 
-(defn -main
+(defn ^:no-doc -main
+  "Deprecated entry point for uberjar invocation via -M."
   [& args]
   (logger/warn "DEPRECATED: -M -m hf.depstar.uberjar -- use -X hf.depstar/uberjar instead.")
   (build-jar-as-main (assoc (parse-args args) :jar-type :uber)))

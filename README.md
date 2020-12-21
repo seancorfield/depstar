@@ -127,7 +127,15 @@ As of 1.1.136, you can use the `:pom-file` exec argument to specify a path to th
 
 ## AOT Compilation
 
-Finally, if you have a `pom.xml` file and also include a (compiled) class in your JAR file that contains a `main` function, you can use the `:main-class` option to specify the name of that class as the `Main-Class` in the manifest instead of the default (`clojure.main`).
+As of 2.0, you can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR.
+
+```bash
+clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
+```
+
+If you are building an uberjar, and you have a `pom.xml` file, you can specify `:main-class` to identify the namespace that contains a `-main` function (and a `(:gen-class)` entry in the `ns` form) and then specify `:aot true` and `depstar` will default `:compile-ns` to a vector containing just that main namespace.
+
+The `:main-class` option also specifies the name of the class that is identified as the `Main-Class` in the manifest instead of the default (`clojure.main`).
 As of 0.4.0, you can ask `depstar` to compile your main namespace via the `:aot true` option:
 
 ```bash
@@ -142,8 +150,6 @@ java -jar MyProject.jar
 This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar based on the `pom.xml` file, including everything on the classpath, with a manifest specifying `project.core` as the main class.
 
 Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources).
-
-> Note: for the 0.4.x releases of `depstar`, you needed to create a `classes` folder manually and add it to the classpath yourself; as of 0.5.0, this is handled automatically by `depstar`.
 
 ## Excluding Files
 
@@ -162,20 +168,21 @@ In addition, `depstar` accepts an `:exclude` option: a vector of strings to use 
 
 The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function) in the Deps and CLI reference for details.
 
-As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the available command-line arguments (not all exec arguments have a command-line equivalent yet):
+As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the legacy command-line arguments (of `-M` invocations -- several of the `-X` exec arguments have no equivalent in the legacy command-line arguments):
 
 * `:aliases` -- if specified, a vector of aliases to use while computing the classpath roots from the `deps.edn` files
-* `:aot` -- if `true`, perform AOT compilation (like the `-C` / `--compile` option)
-* `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the `-P` / `--classpath` option)
-* `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them)
-* `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR
-* `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; also like the `-J` / `--jar` option)
+* `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
+* `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
+* `:compile-ns` -- if specified, a vector of namespaces to compile and whose `.class` files to include in the JAR file
+* `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
+* `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR (like the legacy `-X` / `--exclude` option)
+* `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
-* `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
-* `:no-pom` -- if `true`, ignore the `pom.xml` file (like the `-n` / `--no-pom` option)
-* `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path); there is no equivalent `:main-opts` flag for this
+* `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the legacy `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
+* `:no-pom` -- if `true`, ignore the `pom.xml` file (like the legacy `-n` / `--no-pom` option)
+* `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
-* `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the `-v` / `--verbose` option)
+* `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the legacy `-v` / `--verbose` option)
 
 You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
 
