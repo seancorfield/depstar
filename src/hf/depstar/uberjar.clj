@@ -2,6 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.tools.logging :as logger]
+            [clojure.tools.namespace.find :as tnsf]
             [clojure.string :as str]
             [clojure.tools.deps.alpha :as t])
   (:import (java.io File InputStream PushbackReader)
@@ -460,93 +461,101 @@
 
   (cond
 
-   help
-   {:success false :reason :help}
+    help
+    {:success false :reason :help}
 
-   (not jar)
-   {:success false :reason :no-jar}
+    (not jar)
+    {:success false :reason :no-jar}
 
-   :else
-   (let [jar        (some-> jar str) ; ensure we have a string
-         main-class (some-> main-class str) ; ensure we have a string
-         options    (assoc options ; ensure defaulted/processed options present
-                           :jar        jar
-                           :jar-type   jar-type
-                           :main-class main-class)
-         ^File
-         pom-file   (io/file (or pom-file "pom.xml"))
-         do-aot
-         (if main-class
-           (cond (= :thin jar-type)
-                 (logger/warn "Ignoring :main-class because a 'thin' JAR was requested!")
-                 no-pom
-                 (logger/warn "Ignoring :main-class because :no-pom was specified!")
-                 (not (.exists pom-file))
-                 (logger/warn "Ignoring :main-class because no 'pom.xml' file is present!")
-                 :else
-                 aot)
-           (when aot
-             (logger/warn "Ignoring :aot / :compile-ns because -m / --main was not specified!")))
+    :else
+    (let [jar        (some-> jar str) ; ensure we have a string
+          main-class (some-> main-class str) ; ensure we have a string
+          options    (assoc options ; ensure defaulted/processed options present
+                            :jar        jar
+                            :jar-type   jar-type
+                            :main-class main-class)
+          ^File
+          pom-file   (io/file (or pom-file "pom.xml"))
+          do-aot
+          (if main-class
+            (cond (= :thin jar-type)
+              (logger/warn "Ignoring :main-class because a 'thin' JAR was requested!")
+              no-pom
+              (logger/warn "Ignoring :main-class because :no-pom was specified!")
+              (not (.exists pom-file))
+              (logger/warn "Ignoring :main-class because no 'pom.xml' file is present!")
+              :else
+              aot)
+            (when aot
+              (logger/warn "Ignoring :aot because -m / --main was not specified!")))
 
-         ;; force AOT if compile-ns explicitly requested:
-         do-aot     (or do-aot (seq compile-ns))
-         ;; compile main-class at least (if also do-aot):
-         compile-ns (or compile-ns [main-class])
+          cp         (or (some-> classpath (parse-classpath))
+                         (calc-classpath options))
 
-         tmp-c-dir (when do-aot
-                     (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
-         tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
-         cp        (or (some-> classpath (parse-classpath))
-                       (calc-classpath options))
-         cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
-         dest-name (str/replace jar #"^.*[/\\]" "")
-         jar-path  (.resolve tmp-z-dir ^String dest-name)
-         jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
-         zip-opts  (doto (java.util.HashMap.)
-                         (.put "create" "true")
-                         (.put "encoding" "UTF-8"))
-         aot-failure
-         (when do-aot
-           (some #(try
-                    (logger/info "Compiling" % "...")
-                    (binding [*compile-path* (str tmp-c-dir)]
-                      (compile (symbol %)))
-                    false ; no AOT failure
-                    (catch Throwable t
-                      (logger/error (str "Compilation of " % " failed!"))
-                      (logger/error (.getMessage t))
-                      (when-let [^Throwable c (.getCause t)]
-                        (logger/error "Caused by: " (.getMessage c)))
-                      true))
-                 compile-ns))]
+          ;; expand :all using tools.namespace:
+          compile-ns (if (= :all compile-ns)
+                       (into []
+                             (comp
+                              (filter #(= :directory (classify %)))
+                              (map io/file)
+                              (mapcat tnsf/find-namespaces-in-dir))
+                             cp)
+                       compile-ns)
+          ;; force AOT if compile-ns explicitly requested:
+          do-aot     (or do-aot (seq compile-ns))
+          ;; compile main-class at least (if also do-aot):
+          compile-ns (or compile-ns [main-class])
+          tmp-c-dir  (when do-aot
+                       (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
+          cp         (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
+          aot-failure
+          (when do-aot
+            (some #(try
+                     (logger/info "Compiling" % "...")
+                     (binding [*compile-path* (str tmp-c-dir)]
+                       (compile (symbol %)))
+                     false ; no AOT failure
+                     (catch Throwable t
+                       (logger/error (str "Compilation of " % " failed!"))
+                       (logger/error (.getMessage t))
+                       (when-let [^Throwable c (.getCause t)]
+                         (logger/error "Caused by: " (.getMessage c)))
+                       true))
+                  compile-ns))]
 
-     (if aot-failure
+      (if aot-failure
 
-       {:success false :reason :aot-failed}
+        {:success false :reason :aot-failed}
 
-       (do
-         ;; copy everything to a temporary ZIP (JAR) file:
-         (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
-           (let [tmp (.getPath zfs "/" (make-array String 0))]
-             (reset! errors 0)
-             (reset! multi-release? false)
-             (logger/info "Building" (name jar-type) "jar:" jar)
-             (binding [*debug* (env-prop "debug")
-                       *exclude* (mapv re-pattern exclude)
-                       *debug-clash* debug-clash
-                       *verbose* verbose]
-               (run! #(copy-source % tmp options) cp)
-               (when (and (not no-pom) (.exists pom-file))
-                 (copy-pom tmp pom-file options)))))
-         ;; move the temporary file to its final location:
-         (let [dest-path (path jar)
-               parent (.getParent dest-path)]
-           (when parent (.. parent toFile mkdirs))
-           (Files/move jar-path dest-path copy-opts))
-         ;; was it successful?
-         (if (pos? @errors)
-           {:success false :reason :copy-failures}
-           {:success true}))))))
+        (let [tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+              dest-name (str/replace jar #"^.*[/\\]" "")
+              jar-path  (.resolve tmp-z-dir ^String dest-name)
+              jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
+              zip-opts  (doto (java.util.HashMap.)
+                          (.put "create" "true")
+                          (.put "encoding" "UTF-8"))]
+          ;; copy everything to a temporary ZIP (JAR) file:
+          (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
+            (let [tmp (.getPath zfs "/" (make-array String 0))]
+              (reset! errors 0)
+              (reset! multi-release? false)
+              (logger/info "Building" (name jar-type) "jar:" jar)
+              (binding [*debug* (env-prop "debug")
+                        *exclude* (mapv re-pattern exclude)
+                        *debug-clash* debug-clash
+                        *verbose* verbose]
+                (run! #(copy-source % tmp options) cp)
+                (when (and (not no-pom) (.exists pom-file))
+                  (copy-pom tmp pom-file options)))))
+          ;; move the temporary file to its final location:
+          (let [dest-path (path jar)
+                parent (.getParent dest-path)]
+            (when parent (.. parent toFile mkdirs))
+            (Files/move jar-path dest-path copy-opts))
+          ;; was it successful?
+          (if (pos? @errors)
+            {:success false :reason :copy-failures}
+            {:success true}))))))
 
 (defn ^:no-doc run*
   "Deprecated entry point for REPL or library usage.

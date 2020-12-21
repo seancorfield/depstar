@@ -127,7 +127,7 @@ As of 1.1.136, you can use the `:pom-file` exec argument to specify a path to th
 
 ## AOT Compilation
 
-As of 2.0, you can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR.
+As of 2.0, you can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols (not regular expressions). It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
 
 ```bash
 clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
@@ -173,7 +173,7 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 * `:aliases` -- if specified, a vector of aliases to use while computing the classpath roots from the `deps.edn` files
 * `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
-* `:compile-ns` -- if specified, a vector of namespaces to compile and whose `.class` files to include in the JAR file
+* `:compile-ns` -- if specified, a vector of namespaces to compile and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR (like the legacy `-X` / `--exclude` option)
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
