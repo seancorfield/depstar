@@ -99,7 +99,9 @@ clojure -X:depstar:webassets uberjar :jar MyProject.jar
 
 ## `pom.xml`
 
-If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` and `MANIFEST.MF` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted).
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted).
+
+You can also specify the `:group-id`, `:artifact-id`, and/or `:version` as exec arguments and those values will override what is in the `pom.xml` file. **The `pom.xml` file will be updated to reflect those values.** If the `pom.xml` file contains a VCS `<tag>..</tag>` that matches the version, with a prefix of `v`, it will also be updated (so `<version>` and `<tag>` will stay in sync).
 
 You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
 
@@ -171,11 +173,13 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the legacy command-line arguments (of `-M` invocations -- several of the `-X` exec arguments have no equivalent in the legacy command-line arguments):
 
 * `:aliases` -- if specified, a vector of aliases to use while computing the classpath roots from the `deps.edn` files
+* `:artifact-id` -- if specified, the symbol used for the `artifactId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
 * `:compile-ns` -- if specified, a vector of namespaces to compile and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR (like the legacy `-X` / `--exclude` option)
+* `:group-id` -- if specified, the symbol used for the `groupId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the legacy `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
@@ -183,6 +187,7 @@ As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uber
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the legacy `-v` / `--verbose` option)
+* `:version` -- if specified, the symbol used for the `version` field in `pom.xml` and `pom.properties` when building the JAR file (and also for the VCS `tag` field if matches the current `version` field with a prefix of `v`); **your `pom.xml` file will be updated to match!**
 
 You can make this shorter by adding `:exec-fn` to your alias with some of the arguments defaulted since, for a given project, they will likely be fixed values:
 

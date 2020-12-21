@@ -363,16 +363,62 @@
       (first)
       (second)))
 
+(defn- sync-gav
+  "Given a pom file and options, return the group/artifact IDs and
+  the version. These are taken from the options, if present, otherwise
+  they are read in from the pom file.
+
+  Returns a hash map containing the group/artifact IDs, and the version.
+
+  If the values provided in the options differ from those in the pom file,
+  the pom file will be updated to reflect those in the options hash map.
+
+  Throw an exception if we cannot read them from the pom file."
+  [pom-file {:keys [artifact-id group-id version]}]
+  (let [pom-text     (slurp pom-file)
+        artifact-id' (first-by-tag pom-text :artifactId)
+        group-id'    (first-by-tag pom-text :groupId)
+        version'     (first-by-tag pom-text :version)
+        result       {:artifact-id (or artifact-id artifact-id')
+                      :group-id    (or group-id    group-id')
+                      :version     (or version     version')}]
+    (when-not (and (:group-id result) (:artifact-id result) (:version result))
+      (throw (ex-info "Unable to establish group/artifact and version!" result)))
+    ;; do we need to override any of the pom.xml values?
+    (when (or (and artifact-id artifact-id' (not= artifact-id artifact-id'))
+              (and group-id    group-id'    (not= group-id    group-id'))
+              (and version     version'     (not= version     version')))
+      (logger/info "Updating pom.xml file to"
+                   (str "{"
+                        (:group-id result) "/"
+                        (:artifact-id result) " "
+                        "{:mvn/version \"" (:version result) "\"}"
+                        "}"))
+      (spit pom-file
+            (cond-> pom-text
+              (and artifact-id artifact-id' (not= artifact-id artifact-id'))
+              (str/replace-first (str "<artifactId>" artifact-id' "</artifactId>")
+                                 (str "<artifactId>" artifact-id  "</artifactId>"))
+              (and group-id    group-id'    (not= group-id    group-id'))
+              (str/replace-first (str "<groupId>"    group-id'    "</groupId>")
+                                 (str "<groupId>"    group-id     "</groupId>"))
+              (and version     version'     (not= version     version'))
+              (str/replace-first (str "<version>"    version'     "</version>")
+                                 (str "<version>"    version      "</version>"))
+              ;; also replace <tag> if it matched <version> with v prefix:
+              (and version     version'     (not= version     version'))
+              (str/replace-first (str "<tag>v"       version'     "</tag>")
+                                 (str "<tag>v"       version      "</tag>")))))
+    result))
+
 (defn- copy-pom
   "Using the pom.xml file in the current directory, build a manifest
   and pom.properties, and add both those and the pom.xml file to the JAR."
-  [^Path dest ^File pom-file {:keys [jar-type main-class]}]
-  (let [pom-text    (slurp pom-file)
+  [^Path dest ^File pom-file {:keys [jar-type main-class] :as options}]
+  (let [{:keys [artifact-id group-id version]}
+        (sync-gav pom-file options)
         jdk         (str/replace (System/getProperty "java.version")
                                  #"_.*" "")
-        group-id    (first-by-tag pom-text :groupId)
-        artifact-id (first-by-tag pom-text :artifactId)
-        version     (first-by-tag pom-text :version)
         build-now   (java.util.Date.)
         last-mod    (FileTime/fromMillis (.getTime build-now))
         manifest    (str "Manifest-Version: 1.0\n"
@@ -392,11 +438,6 @@
                          "groupId=" group-id "\n"
                          "artifactId=" artifact-id "\n")
         maven-dir   (str "META-INF/maven/" group-id "/" artifact-id "/")]
-    (when-not (and group-id artifact-id version)
-      (throw (ex-info "Unable to read pom.xml file!"
-                      {:group-id group-id
-                       :artifact-id artifact-id
-                       :version version})))
     (when *verbose* (println ""))
     (logger/info "Processing pom.xml for"
                  (str "{" group-id "/" artifact-id

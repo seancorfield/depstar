@@ -3,6 +3,7 @@
 * 2.0.x in progress
   * `depstar` now behaves like a "tool" rather than a "library" -- you should use `:replace-deps` to specify it as a dependency rather than `:extra-deps` and it will compute the project basis from the system, user, and project `deps.edn` files using `clojure.tools.deps.alpha`. By default, it applies no aliases but you can specify an `:aliases` exec-arg with a vector of aliases to apply. By default, it behaves like the CLI's `-Srepro` option in that the user `deps.edn` file is ignored: specify `:repro false` if you want the user `deps.edn` file to be included in the basis. Fixes #47, #48, #49.
   * `:compile-ns` exec-arg supports a vector of namespaces to be compiled; this overrides `:aot` and `:main-class` and allows you to AOT-compile specific namespaces for inclusion in a thin JAR, if needed. Fixes #51.
+  * The group/artifact IDs and the version can now be overridden by exec arguments (`:group-id`, `:artifact-id`, and `:version` respectively, and `depstar` will update your `pom.xml` file to match). Fixes #53.
   * Supported entry points: `hf.depstar/jar` and `hf.depstar/uberjar` via `-X`, `hf.depstar.uberjar/build-jar` via REPL or library usage. The following legacy entry points are all deprecated: `hf.depstar.jar/-main`, `hf.depstar.jar/run`, `hf.depstar.uberjar/-main`, `hf.depstar.uberjar/run`, and `hf.depstar.uberjar/run*`.
 
 * 1.1.136 -- 2020-11-16
