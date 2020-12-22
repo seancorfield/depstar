@@ -9,18 +9,33 @@
 
 (set! *warn-on-reflection* true)
 
+(defn- attrs->map [^java.util.jar.Attributes attrs]
+  (into {} (map (fn [[k v]] [(str k) v])) (.entrySet attrs)))
+
 (defn- read-jar [f & [regex]]
   (with-open [in (-> f (io/input-stream) (JarInputStream.))]
+    ;; JDK15+ lets you get at the manifest programmatically
     (let [manifest (when-let [m (.getManifest in)]
-                     (into {}
-                           (map (fn [[k v]] [(str k) v]))
-                           (.entrySet (.getMainAttributes m))))]
+                     (into (attrs->map (.getMainAttributes m))
+                           (map (fn [[k v]] [k (attrs->map v)])
+                                (.getEntries m))))]
       (loop [entries (cond-> {:entries [] :files {}}
                        manifest
                        (assoc :manifest manifest))]
         (if-let [entry (.getNextEntry in)]
-          (let [name (.getName entry)]
+          (let [name (.getName entry)
+                manifest
+                ;; up to JDK14 leaves the manifest in as a file
+                (when (= "META-INF/MANIFEST.MF" name)
+                  (into {}
+                        (map (fn [line]
+                                (let [[k v] (str/split line #":")]
+                                  [(some-> k (str/trim))
+                                   (some-> v (str/trim))])))
+                        (line-seq (io/reader in))))]
             (recur (cond-> entries
+                     manifest
+                     (assoc :manifest manifest)
                      (not (.isDirectory entry))
                      (update :entries conj name)
                      (and regex (re-matches regex name))
