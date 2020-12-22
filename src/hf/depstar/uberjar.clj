@@ -376,12 +376,12 @@
               (str/replace-first (str "<groupId>"    group-id'    "</groupId>")
                                  (str "<groupId>"    group-id     "</groupId>"))
               (and version     version'     (not= version     version'))
-              (str/replace-first (str "<version>"    version'     "</version>")
-                                 (str "<version>"    version      "</version>"))
-              ;; also replace <tag> if it matched <version> with v prefix:
-              (and version     version'     (not= version     version'))
-              (str/replace-first (str "<tag>v"       version'     "</tag>")
-                                 (str "<tag>v"       version      "</tag>")))))
+              (->
+                (str/replace-first (str "<version>"    version'     "</version>")
+                                   (str "<version>"    version      "</version>"))
+                ;; also replace <tag> if it matched <version> with v prefix:
+                (str/replace-first (str "<tag>v"       version'     "</tag>")
+                                   (str "<tag>v"       version      "</tag>"))))))
     result))
 
 (defn- copy-pom
@@ -492,6 +492,7 @@
           basis      (calc-project-basis options)
           ^File
           pom-file   (io/file (or pom-file "pom.xml"))
+          new-pom    (not (.exists pom-file))
           _
           (when sync-pom
             (logger/info "Synchronizing" (.getName pom-file))
@@ -499,9 +500,9 @@
              {:basis basis
               :params (cond-> {:target-dir (or (.getParent pom-file) ".")
                                :src-pom    (.getPath pom-file)}
-                        (and group-id artifact-id)
+                        (and new-pom group-id artifact-id)
                         (assoc :lib (symbol (name group-id) (name artifact-id)))
-                        version
+                        (and new-pom version)
                         (assoc :version version))}))
           _ (.getParent (io/file "pom.xml"))
           do-aot
