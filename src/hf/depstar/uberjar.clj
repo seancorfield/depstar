@@ -13,7 +13,8 @@
                           FileVisitOption FileVisitResult FileVisitor
                           Path)
            (java.nio.file.attribute FileAttribute FileTime)
-           (java.util.jar JarInputStream JarEntry))
+           (java.util.jar JarInputStream JarEntry)
+           (org.apache.logging.log4j.core.config.plugins.processor PluginCache))
   (:gen-class))
 
 (set! *warn-on-reflection* true)
@@ -60,26 +61,11 @@
   ^Path [s]
   (.getPath FS s (make-array String 0)))
 
-(def ^:private idiotic-log4j2-plugins-file
+(def ^:private log4j2-plugins-file
   "Log4j2 has a very problematic binary plugins cache file that needs to
   be merged -- but it's going away in 3.0.0 apparently because it keeps
-  breaking build tools... As a workaround, if we run into multiple copies
-  of it, we will let the larger file overwrite the smaller file so that
-  we are likely to end up with more plugins in the final artifact. This
-  is not a real solution -- we should rebuild the PluginsCache object
-  but I don't want to face that right now. What we actually do here is
-  just allow 'small' versions of this file to be overwritten."
+  breaking build tools... We use log4j's plugin processor to merge it."
   "META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat")
-
-(def ^:private idiotic-log4j2-plugins-size
-  "This is the threshold up to which we'll allow a duplicate Log4j2Plugins.dat
-  file to be overwritten. It's arbitrary based on current versions being about
-  3K in the log4j 1.2 bridge and about 20K in the log4j2 core file."
-  5000)
-
-(def ^:private ok-to-overwrite-idiotic-log4j2-file
-  "Assume we can overwrite it until we hit a large version."
-  (atom true))
 
 (defn- legal-file? [filename]
   (re-find #"(?i)^(META-INF/)?(COPYRIGHT|NOTICE|LICENSE)(\.(txt|md))?$" filename))
@@ -96,7 +82,7 @@
     (legal-file? filename)
     :concat-no-dupe
 
-    (= idiotic-log4j2-plugins-file filename)
+    (= log4j2-plugins-file filename)
     :log4j2-surgery
 
     :else
@@ -111,7 +97,7 @@
                        :merge-edn      "merged as EDN."
                        :concat-lines   "concatenated it."
                        :concat-no-dupe "concatenated (if not dupe)."
-                       :log4j2-surgery "selecting the largest."
+                       :log4j2-surgery "merged."
                        :noop           "ignoring duplicate.")))
       strategy)))
 
@@ -165,21 +151,17 @@
 
 (defmethod clash
   :log4j2-surgery
-  [filename ^InputStream in ^Path target]
-  ;; we should also set the last mod date/time here but it isn't passed in
-  ;; and I'm not going to make that change just to make this hack perfect!
-  (if @ok-to-overwrite-idiotic-log4j2-file
-    (do
-      (when *debug*
-        (logger/info "overwriting" filename))
-      (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts)
-      (when (< idiotic-log4j2-plugins-size (Files/size target))
-        ;; we've copied a big enough file, stop overwriting it!
-        (when *debug*
-          (logger/info "big enough -- no more copying!"))
-        (reset! ok-to-overwrite-idiotic-log4j2-file false)))
-    (when *debug*
-      (logger/info "ignoring" filename))))
+  [_filename ^InputStream in ^Path target]
+  (let [cache (PluginCache.)
+        temp1 (Files/createTempFile "plugins" "dat" (make-array FileAttribute 0))
+        temp2 (Files/createTempFile "plugins" "dat" (make-array FileAttribute 0))
+        ^java.util.Collection
+        urls  (map #(.toURL (.toUri ^Path %)) [temp1 temp2])]
+    (Files/copy in temp1 ^"[Ljava.nio.file.CopyOption;" copy-opts)
+    (Files/copy target temp2 ^"[Ljava.nio.file.CopyOption;" copy-opts)
+    (.loadCacheFiles cache (.elements (java.util.Vector. urls)))
+    (with-open [os (Files/newOutputStream target open-opts)]
+      (.writeCache cache os))))
 
 (defmethod clash
   :default
@@ -217,15 +199,6 @@
             (swap! no-dupe-files
                    update (str/lower-case filename) (fnil conj []) content))
           (Files/copy in target ^"[Ljava.nio.file.CopyOption;" copy-opts))
-        ;; record first Log4j2Plugins.dat file:
-        (when (= idiotic-log4j2-plugins-file filename)
-          (when *debug*
-            (logger/info "copied" filename (Files/size target)))
-          (when (< idiotic-log4j2-plugins-size (Files/size target))
-            ;; we've copied a big enough file, stop overwriting it!
-            (when *debug*
-              (logger/info "big enough -- no more copying!"))
-            (reset! ok-to-overwrite-idiotic-log4j2-file false)))
         (when last-mod
           (Files/setLastModifiedTime target last-mod))))
     (when *debug*
@@ -609,7 +582,7 @@
             (Files/move jar-path dest-path copy-opts))
           ;; was it successful?
           (if (pos? @errors)
-            {:success false :reason :copy-failures}
+            {:success false :reason :copy-failure}
             {:success true}))))))
 
 (defn ^:no-doc run*

@@ -24,6 +24,8 @@ For `depstar` 2.x:
 }
 ```
 
+> Note: if you plan to use AOT-compilation when building your JAR files, you may still need to use `:extra-deps`, instead of `:replace-deps`, so that the dependencies needed by your code are _also_ on the classpath when running `depstar`!
+
 For `depstar` 1.x:
 
 ```clj
@@ -145,6 +147,8 @@ As of 2.0, you can specify namespaces to be AOT-compiled using the `:compile-ns`
 ```bash
 clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
 ```
+
+> Note: since the `compile` call happens in the context of `depstar`'s runtime, you will probably need to use `:extra-deps` to _add_ `depstar` to your projects dependencies instead of `:replace-deps` to treat `depstar` as an external tool. If you use `:replace-deps`, then dependencies your code needs in order to be successfully compiled will not be available.
 
 If you are building an uberjar, and you have a `pom.xml` file, you can specify `:main-class` to identify the namespace that contains a `-main` function (and a `(:gen-class)` entry in the `ns` form) and then specify `:aot true` and `depstar` will default `:compile-ns` to a vector containing just that main namespace.
 

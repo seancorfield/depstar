@@ -1,7 +1,7 @@
-
 *~
 .java-version
 .cpcache
+.rebel_readline_history
 .socket-repl-port
 *.jar
 /classes
