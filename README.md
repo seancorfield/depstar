@@ -18,7 +18,7 @@ For `depstar` 2.x:
 {
   :aliases {:depstar
               {:replace-deps ; tool usage is new in 2.x
-                 {seancorfield/depstar {:mvn/version "1.1.136"}}
+                 {seancorfield/depstar {:mvn/version "2.0.next"}}
                :ns-default hf.depstar
                :exec-args {}}}
 }
