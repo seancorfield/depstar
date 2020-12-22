@@ -1,4 +1,0 @@
-{:deps    {javax.xml.bind/jaxb-api {:mvn/version "2.3.0"}}
- :aliases {:uberjar {:extra-deps  {seancorfield/depstar
-                                   {:local/root "../../"}}
-                     :main-opts   ["-m" "hf.depstar.uberjar" "bug.jar"]}}}
