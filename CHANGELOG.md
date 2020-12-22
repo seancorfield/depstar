@@ -1,13 +1,13 @@
 # Changes
 
-* 2.0.next in progress
-  * Some automated tests now exist, along with CI via GitHub Actions. Fixes #26.
+* 2.0.160 -- 2020-12-22
   * `depstar` now behaves like a "tool" rather than a "library" -- you should use `:replace-deps` to specify it as a dependency rather than `:extra-deps` and it will compute the project basis from the system, user, and project `deps.edn` files using `clojure.tools.deps.alpha`. By default, it applies no aliases but you can specify an `:aliases` exec-arg with a vector of aliases to apply. By default, it behaves like the CLI's `-Srepro` option in that the user `deps.edn` file is ignored: specify `:repro false` if you want the user `deps.edn` file to be included in the basis. Fixes #47, #48, #49.
-  * The log4j2 plugins cache is now merged correctly. Fixes #50.
   * `:compile-ns` exec-arg supports a vector of namespaces to be compiled; this overrides `:aot` and `:main-class` and allows you to AOT-compile specific namespaces for inclusion in a thin JAR, if needed. Fixes #51.
   * The group/artifact IDs and the version can now be overridden by exec arguments (`:group-id`, `:artifact-id`, and `:version` respectively, and `depstar` will update your `pom.xml` file to match). Fixes #53.
   * `:sync-pom true` will automatically run the equivalent of `clojure -Spom`. See README for more details. Fixes #54.
+  * The log4j2 plugins cache is now merged correctly. Fixes #50.
   * Supported entry points: `hf.depstar/jar` and `hf.depstar/uberjar` via `-X`, `hf.depstar.uberjar/build-jar` via REPL or library usage. The following legacy entry points are all deprecated: `hf.depstar.jar/-main`, `hf.depstar.jar/run`, `hf.depstar.uberjar/-main`, `hf.depstar.uberjar/run`, and `hf.depstar.uberjar/run*`.
+  * Automated tests now exist, along with CI via GitHub Actions, against JDK versions 8, 11, 14, 15, 16-ea, and 17-ea. Fixes #26.
 
 * 1.1.136 -- 2020-11-16
   * Fix #46 by adding `:pom-file` exec argument to specify a `pom.xml` file in a non-standard location, e.g., `:pom-file '"/tmp/pom.xml"'` -- there is no equivalent `:main-opts` flag for this, you have to use the CLI's `-X` invocation to supply it.
