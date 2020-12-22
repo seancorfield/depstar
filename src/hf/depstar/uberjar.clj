@@ -536,20 +536,32 @@
           tmp-c-dir  (when do-aot
                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
           cp         (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
-          aot-failure
-          (when do-aot
-            (some #(try
-                     (logger/info "Compiling" % "...")
-                     (binding [*compile-path* (str tmp-c-dir)]
-                       (compile (symbol %)))
-                     false ; no AOT failure
-                     (catch Throwable t
-                       (logger/error (str "Compilation of " % " failed!"))
-                       (logger/error (.getMessage t))
-                       (when-let [^Throwable c (.getCause t)]
-                         (logger/error "Caused by: " (.getMessage c)))
-                       true))
-                  compile-ns))]
+          compile-fn (fn [s]
+                       (logger/info "Compiling" s "...")
+                       (let [java (or (System/getenv "JAVA_CMD") "java")
+                             p (.start (ProcessBuilder.
+                                        ^"[Ljava.lang.String;"
+                                        (into-array
+                                         String
+                                         [java
+                                          "-cp"
+                                          (str/join (System/getProperty "path.separator") cp)
+                                          "clojure.main"
+                                          "-e"
+                                          (str "(binding,[*compile-path*,"
+                                               (pr-str (str tmp-c-dir))
+                                               "],(compile,'"
+                                               (name s)
+                                               "))")])))]
+                         (.waitFor p)
+                         (let [stderr (slurp (.getErrorStream p))]
+                           (when (seq stderr) (println stderr))
+                           (if (zero? (.exitValue p))
+                             false ; no AOT failure
+                             (do
+                               (logger/error (str "Compilation of " s " failed!"))
+                               true)))))
+          aot-failure (when do-aot (some compile-fn compile-ns))]
 
       (if aot-failure
 
