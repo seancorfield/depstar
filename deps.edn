@@ -7,9 +7,15 @@
         org.clojure/tools.namespace {:mvn/version "1.1.0"}
         org.apache.logging.log4j/log4j-core {:mvn/version "2.14.0"}
         org.slf4j/slf4j-simple {:mvn/version "1.7.30"}}
- :aliases {:test {:main-opts ["-m" "hf.depstar.uberjar" "depstar-standalone.jar"
-                              "-C" "-m" "hf.depstar.uberjar"]}
+ :aliases {:test {:extra-paths ["test"]}
+           :runner
+           {:extra-deps {com.cognitect/test-runner
+                         {:git/url "https://github.com/cognitect-labs/test-runner"
+                          :sha "b6b3193fcc42659d7e46ecd1884a228993441182"}}
+            :main-opts ["-m" "cognitect.test-runner"
+                        "-d" "test"]}
            :jar {:exec-fn hf.depstar/jar
-                 :exec-args {:jar depstar.jar}}
+                 :exec-args {:jar depstar.jar
+                             :sync-pom true}}
            :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
                     :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "depstar.jar"]}}}

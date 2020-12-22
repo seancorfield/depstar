@@ -153,8 +153,8 @@
   :log4j2-surgery
   [_filename ^InputStream in ^Path target]
   (let [cache (PluginCache.)
-        temp1 (Files/createTempFile "plugins" "dat" (make-array FileAttribute 0))
-        temp2 (Files/createTempFile "plugins" "dat" (make-array FileAttribute 0))
+        temp1 (Files/createTempFile "plugins" ".dat" (make-array FileAttribute 0))
+        temp2 (Files/createTempFile "plugins" ".dat" (make-array FileAttribute 0))
         ^java.util.Collection
         urls  (map #(.toURL (.toUri ^Path %)) [temp1 temp2])]
     (Files/copy in temp1 ^"[Ljava.nio.file.CopyOption;" copy-opts)
