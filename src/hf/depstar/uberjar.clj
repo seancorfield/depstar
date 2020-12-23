@@ -372,16 +372,20 @@
               (and artifact-id artifact-id' (not= artifact-id artifact-id'))
               (str/replace-first (str "<artifactId>" artifact-id' "</artifactId>")
                                  (str "<artifactId>" artifact-id  "</artifactId>"))
-              (and group-id    group-id'    (not= group-id    group-id'))
-              (str/replace-first (str "<groupId>"    group-id'    "</groupId>")
-                                 (str "<groupId>"    group-id     "</groupId>"))
-              (and version     version'     (not= version     version'))
+
+              (and group-id    group-id'    (not= group-id group-id'))
+              (str/replace-first (str "<groupId>" group-id' "</groupId>")
+                                 (str "<groupId>" group-id  "</groupId>"))
+
+              (and version     version'     (not= version version'))
               (->
-                (str/replace-first (str "<version>"    version'     "</version>")
-                                   (str "<version>"    version      "</version>"))
-                ;; also replace <tag> if it matched <version> with v prefix:
-                (str/replace-first (str "<tag>v"       version'     "</tag>")
-                                   (str "<tag>v"       version      "</tag>"))))))
+                (str/replace-first (str "<version>" version' "</version>")
+                                   (str "<version>" version  "</version>"))
+                ;; also replace <tag> if it matched <version> with any prefix:
+                (str/replace-first (re-pattern (str "<tag>([^<]*)"
+                                                    (java.util.regex.Pattern/quote version')
+                                                    "</tag>"))
+                                   (str "<tag>$1" version "</tag>"))))))
     result))
 
 (defn- copy-pom
