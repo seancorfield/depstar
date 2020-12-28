@@ -541,23 +541,31 @@
           tmp-c-dir  (when do-aot
                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
           cp         (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
+          java (or (System/getenv "JAVA_CMD") "java")
+          windows? (-> (System/getProperty "os.name")
+                       (str/lower-case)
+                       (str/includes? "windows"))
+          cmd-args (fn [s]
+                     (let [args [java
+                                 "-cp"
+                                 (str/join (System/getProperty "path.separator") cp)
+                                 "clojure.main"
+                                 "-e"
+                                 (str "(binding,[*compile-path*,"
+                                      (pr-str (str tmp-c-dir))
+                                      "],(compile,'"
+                                      (name s)
+                                      "))")]]
+                       (if windows?
+                         (mapv #(str/replace % "\"" "\\\"") args)
+                         args)))
           compile-fn (fn [s]
                        (logger/info "Compiling" s "...")
-                       (let [java (or (System/getenv "JAVA_CMD") "java")
-                             p (.start (ProcessBuilder.
+                       (let [p (.start (ProcessBuilder.
                                         ^"[Ljava.lang.String;"
                                         (into-array
                                          String
-                                         [java
-                                          "-cp"
-                                          (str/join (System/getProperty "path.separator") cp)
-                                          "clojure.main"
-                                          "-e"
-                                          (str "(binding,[*compile-path*,"
-                                               (pr-str (str tmp-c-dir))
-                                               "],(compile,'"
-                                               (name s)
-                                               "))")])))]
+                                         (cmd-args s))))]
                          (.waitFor p)
                          (let [stderr (slurp (.getErrorStream p))]
                            (when (seq stderr) (println stderr))
