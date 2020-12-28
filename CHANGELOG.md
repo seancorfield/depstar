@@ -1,5 +1,8 @@
 # Changes
 
+* 2.0.next -- in progress
+  * Escape compile process arguments when shelling out on Windows. Fixes #58 (@borkdude).
+
 * 2.0.161 -- 2020-12-23
   * Allow more formats of `<tag>` to be matched against the version, when synchronizing `:version`. Fixes #55.
 
