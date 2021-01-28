@@ -399,7 +399,9 @@
         build-now   (java.util.Date.)
         last-mod    (FileTime/fromMillis (.getTime build-now))
         manifest    (str "Manifest-Version: 1.0\n"
-                         "Built-By: depstar\n"
+                         "Created-By: depstar\n"
+                         (when-let [user (System/getProperty "user.name")]
+                           (str "Built-By: " user "\n"))
                          "Build-Jdk: " jdk "\n"
                          (when @multi-release?
                            "Multi-Release: true\n")
