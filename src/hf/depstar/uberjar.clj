@@ -499,16 +499,20 @@
           new-pom    (not (.exists pom-file))
           _
           (when sync-pom
-            (logger/info "Synchronizing" (.getName pom-file))
-            (pom/sync-pom
-             {:basis basis
-              :params (cond-> {:target-dir (or (.getParent pom-file) ".")
-                               :src-pom    (.getPath pom-file)}
-                        (and new-pom group-id artifact-id)
-                        (assoc :lib (symbol (name group-id) (name artifact-id)))
-                        (and new-pom version)
-                        (assoc :version version))}))
-          _ (.getParent (io/file "pom.xml"))
+            ;; #56 require GAV when sync-pom used to create pom.xml:
+            (if (and new-pom (not (and group-id artifact-id version)))
+              (logger/warn "Ignoring :sync-pom because :group-id, :artifact-id, and"
+                           ":version are all required when creating a new 'pom.xml' file!")
+              (do
+                (logger/info "Synchronizing" (.getName pom-file))
+                (pom/sync-pom
+                 {:basis basis
+                  :params (cond-> {:target-dir (or (.getParent pom-file) ".")
+                                   :src-pom    (.getPath pom-file)}
+                            (and new-pom group-id artifact-id)
+                            (assoc :lib (symbol (name group-id) (name artifact-id)))
+                            (and new-pom version)
+                            (assoc :version version))}))))
           do-aot
           (if main-class
             (cond (= :thin jar-type)
