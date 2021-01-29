@@ -13,8 +13,7 @@
             :main-opts ["-m" "cognitect.test-runner"
                         "-d" "test"]}
            :jar {:exec-fn hf.depstar/jar
-                 :exec-args {:jar depstar.jar
-                             :sync-pom true}}
+                 :exec-args {:jar "depstar.jar" :sync-pom true}}
            :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
                     :exec-fn deps-deploy.deps-deploy/deploy
                     :exec-args {:installer :remote :artifact "depstar.jar"}}
