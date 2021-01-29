@@ -1,6 +1,6 @@
 # Changes
 
-* 2.0.next in progress
+* 2.0.169 -- 2021-01-29
   * Fix #56 by requiring all of `:group-id`, `:artifact-id`, and `:version` when `:sync-pom true` and no `pom.xml` file is present (GAV are now required when you want `depstar` to create your `pom.xml` file).
   * Fix #59 by decoupling `pom.xml` file handling from `MANIFEST.MF` handling, which makes it possible to build an uberjar without a `pom.xml` file. This also allows you to specify `:aot true` and `:main-class` when building a (thin) JAR file -- but cautions you that it is not recommended!
   * Fix #60 by attempting to run `git rev-parse HEAD` (in the same directory as the `pom.xml`) and adding the output as `revision=` in `pom.properties`.
