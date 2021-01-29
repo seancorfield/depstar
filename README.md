@@ -12,25 +12,11 @@ For support, help, general questions, use the [#depstar channel on the Clojurian
 
 Install this tool to an alias in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
-For `depstar` 2.x:
-
 ```clj
 {
   :aliases {:depstar
-              {:replace-deps ; tool usage is new in 2.x
+              {:replace-deps
                  {seancorfield/depstar {:mvn/version "2.0.165"}}
-               :ns-default hf.depstar
-               :exec-args {}}}
-}
-```
-
-For `depstar` 1.x:
-
-```clj
-{
-  :aliases {:depstar
-              {:extra-deps
-                 {seancorfield/depstar {:mvn/version "1.1.136"}}
                :ns-default hf.depstar
                :exec-args {}}}
 }
@@ -62,13 +48,15 @@ If you want to see all of the files that are being copied into the JAR file, add
 
 ## Classpath
 
-`depstar` walks the classpath to find resources to add to the JAR:
+`depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:
 
 * For each directory on the classpath, the contents of that directory are copied (recursively) to the output JAR as individual files.
 * If `:jar-type :thin` (via the `hf.depstar/jar` exec-fn), JAR files on the classpath are ignored, otherwise (`:jar-type :uber`, via the `hf.depstar/uberjar` exec-fn), each JAR file on the classpath is expanded and its contents are copied to the output JAR as individual files.
 * Other types of files on the classpath are ignored (a warning is printed unless the file is on the excluded list, see below).
 
-As of `depstar` 2.0, the classpath is computed from the system and project `deps.edn` files. If `:repro false`, the user `deps.edn` file is also used. _This is intended to correspond to the CLI's `-Srepro` option that ignores the user `deps.edn` file._ If you need to adjust that classpath, based on aliases, you can supply a vector of aliases to the `:aliases` exec argument of `depstar`.
+By default, only the system and project `deps.edn` files are used (as if the `:repro true` option is provided). _This is intended to correspond to the CLI's `-Srepro` option that ignores the user `deps.edn` file._ If the `:repro false` option is provided instead, the user `deps.edn` file is also used.
+
+If you need to adjust the computed classpath, based on aliases, you can supply a vector of aliases to the `:aliases` exec argument of `depstar`.
 
 For example, you can add web assets into an uberjar by including an alias in your project `deps.edn`:
 
@@ -89,37 +77,67 @@ You can also pass an explicit classpath into `depstar` and it will use that inst
 clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
 ```
 
-In `depstar` 1.x, the current runtime classpath is used by default instead of being computed from the `deps.edn` files. Accordingly, to add `:webassets` to the JAR file, you would use the following command:
+> Note: the `-Sdeps` argument to `clojure` only affects how the initial classpath is computed to run a program -- it cannot affect the classpath `depstar` itself computes from the `deps.edn` files. If you need to use `-Sdeps`, for example to specify alternate repos for dependencies, use the `:classpath` approach shown above.
+
+## `:main-class`
+
+If you are building an uberjar, the manifest (`META-INF/MANIFEST.MF`) will declare the `Main-Class` (specified by the `:main-class` option, or `clojure.main` if omitted).
+
+`depstar` does no AOT compilation by default -- use the `:aot true` option to enable AOT compilation (see below).
+
+If you build an uberjar without `:main-class` (as in the `pom.xml` examples below), you can run the resulting file as follows:
 
 ```bash
-clojure -X:depstar:webassets uberjar :jar MyProject.jar
+clojure -X:depstar uberjar :jar MyProject.jar
+java -jar MyProject.jar -m project.core
 ```
 
-> Note: this type of invocation does not work with `depstar` 2.0.
+If you build an uberjar with `:main-class` (and AOT compilation), you can run the resulting file as follows:
+
+```bash
+clojure -X:depstar uberjar :aot true :jar MyProject.jar :main-class project.core
+java -jar MyProject.jar
+```
+
+## AOT Compilation
+
+You can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols (not regular expressions). It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
+
+```bash
+clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
+```
+
+If you are building an uberjar, you can specify `:main-class` to identify the namespace that contains a `-main` function (and a `(:gen-class)` entry in the `ns` form) and then specify `:aot true` and `depstar` will default `:compile-ns` to a vector containing just that main namespace.
+
+The `:main-class` option also specifies the name of the class that is identified as the `Main-Class` in the manifest instead of the default (`clojure.main`).
+
+```bash
+# build the uberjar with AOT compilation
+clojure -X:depstar uberjar :jar MyProject.jar :aot true :main-class project.core
+# Main-Class: project.core
+java -jar MyProject.jar
+```
+
+This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar including everything on the classpath, with a manifest specifying `project.core` as the main class.
+
+Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources). See the `:exclude` option for ways to exclude unwanted compiled `.class` files.
 
 ## `pom.xml`
 
-If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. If you are building an uberjar, the manifest will declare the `Main-Class` (specified by the `:main-class` option below, `clojure.main` if omitted). You can specify `:pom-file` as an exec argument if you want to use a different pom file.
+If you are creating a library and intend to deploy it to Clojars or a similar repository, you will need a `pom.xml` file.
+
+If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. You can specify `:pom-file` as an exec argument if you want to use a different pom file.
 
 You can also specify the `:group-id`, `:artifact-id`, and/or `:version` as exec arguments and those values will override what is in the `pom.xml` file. **The `pom.xml` file will be updated to reflect those values.** If the `pom.xml` file contains a VCS `<tag>..</tag>` that matches the version, with any optional prefix, it will also be updated (so `<version>` and `<tag>` will stay in sync).
 
 You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
 
-You can generate a minimal `pom.xml` file using the `clojure -Spom` command (and that will also update the dependencies in an existing `pom.xml` based on `deps.edn`). `depstar` 2.0 can run this for you, using the same computed project basis that it uses for building the JAR file: specify the `:sync-pom true` exec argument to perform this step:
+You can generate a minimal `pom.xml` file using the `clojure -Spom` command (and that will also update the dependencies in an existing `pom.xml` based on `deps.edn`). `depstar` can run this for you, using the same computed project basis that it uses for building the JAR file: specify the `:sync-pom true` exec argument to perform this step:
 
 * If no `pom.xml` file exists (where `:pom-file` specifies or else in the current directory), you will also need to specify `:group-id`, `:artifact-id`, and `:version`, and a minimal pom file will be created.
 * If a `pom.xml` file already exists (per `:pom-file` or in the current directory), it will be updated to reflect the latest dependencies from the project basis, and any `:group-id`/`:artifact-id` pair and/or `:version` supplied as exec arguments.
 
-Note that `depstar` does no AOT compilation by default -- use the `:aot true` option to enable AOT compilation (see below).
-
-If you build an uberjar, you can run the resulting file as follows:
-
-```bash
-clojure -X:depstar uberjar :jar MyProject.jar
-java -cp MyProject.jar clojure.main -m project.core
-```
-
-If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, so that a manifest is included, you can run the resulting file as follows:
+If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, you can run the resulting file as follows:
 
 ```bash
 # if pom.xml file is already present:
@@ -136,33 +154,9 @@ clojure -X:depstar uberjar :sync-pom true \
 java -jar MyProject.jar -m project.core
 ```
 
-As of 1.1.136, you can use the `:pom-file` exec argument to specify a path to the `pom.xml` file if it is not in the current directory.
+See the `:main-class` option above if you want `java -jar` to run your main function by default instead of requiring the `-m` option.
 
-## AOT Compilation
-
-As of 2.0, you can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols (not regular expressions). It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
-
-```bash
-clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
-```
-
-If you are building an uberjar, and you have a `pom.xml` file, you can specify `:main-class` to identify the namespace that contains a `-main` function (and a `(:gen-class)` entry in the `ns` form) and then specify `:aot true` and `depstar` will default `:compile-ns` to a vector containing just that main namespace.
-
-The `:main-class` option also specifies the name of the class that is identified as the `Main-Class` in the manifest instead of the default (`clojure.main`).
-As of 0.4.0, you can ask `depstar` to compile your main namespace via the `:aot true` option:
-
-```bash
-# generate pom.xml (or create it manually)
-clojure -Spom
-# build the uberjar with AOT compilation
-clojure -X:depstar uberjar :jar MyProject.jar :aot true :main-class project.core
-# Main-Class: project.core
-java -jar MyProject.jar
-```
-
-This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar based on the `pom.xml` file, including everything on the classpath, with a manifest specifying `project.core` as the main class.
-
-Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources).
+You can use the `:pom-file` exec argument to specify a path to the `pom.xml` file if it is not in the current directory.
 
 ## Excluding Files
 
@@ -181,11 +175,11 @@ In addition, `depstar` accepts an `:exclude` option: a vector of strings to use 
 
 The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific function and pass a hash map of arguments. See [Executing a function that takes a map](https://clojure.org/reference/deps_and_cli#_executing_a_function) in the Deps and CLI reference for details.
 
-As of 1.1.117, `depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the legacy command-line arguments (of `-M` invocations -- several of the `-X` exec arguments have no equivalent in the legacy command-line arguments):
+`depstar` supports this via `hf.depstar/jar` and `hf.depstar/uberjar` which both accept a hash map that mirrors the legacy command-line arguments (of `-M` invocations for `depstar` 1.0 -- although several of the `-X` exec arguments have no equivalent in the legacy command-line arguments):
 
 * `:aliases` -- if specified, a vector of aliases to use while computing the classpath roots from the `deps.edn` files
-* `:artifact-id` -- if specified, the symbol used for the `artifactId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
+* `:artifact-id` -- if specified, the symbol used for the `artifactId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
 * `:compile-ns` -- if specified, a vector of namespaces to compile and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
@@ -225,8 +219,6 @@ clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
 ```
 
 For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
-
-> Note: if you used `-X` with `depstar` 1.x to build an uberjar, it would include `org.clojure/tools.deps.alpha` even if it was not a dependency of your project.
 
 ## Debugging `depstar` Behavior
 

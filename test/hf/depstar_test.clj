@@ -48,12 +48,14 @@
 (deftest simple-thin-jar-test
   (let [jar (File/createTempFile "test" ".jar")]
     (testing "just source"
+      (println "[SOURCE]")
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)})))
       (let [contents (:entries (read-jar jar))]
         (is (zero? (count (filter #(str/ends-with? % ".class") contents))))
         (is (= 4 (count (filter #(str/ends-with? % ".clj") contents))))))
     (testing "transitive compilation"
+      (println "[COMPILATION]")
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
                              :compile-ns '[hf.depstar]})))
@@ -64,6 +66,7 @@
         (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
                                        (str/ends-with? % ".class")) contents)) 100))))
     (testing "compilation with exclusion"
+      (println "[COMPILATION/EXCLUSION]")
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
                              :compile-ns '[hf.depstar]
@@ -74,6 +77,7 @@
         (is (< 50 (count (filter #(str/ends-with? % ".class") contents)) 100))))))
 
 (deftest issue-5
+  (println "[#5]")
   (let [jar (File/createTempFile "test" ".jar")]
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
@@ -93,6 +97,7 @@
       (is (some #(= "java-time-literals.core" (namespace %)) (vals readers))))))
 
 (deftest issue-7
+  (println "[#7]")
   (let [jar (File/createTempFile "test" ".jar")]
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
@@ -105,6 +110,7 @@
       (is (empty? (:files contents))))))
 
 (deftest issue-22
+  (println "[#22]")
   (let [jar (File/createTempFile "test" ".jar")]
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)

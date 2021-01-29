@@ -2,6 +2,7 @@
 
 * 2.0.next in progress
   * Fix #56 by requiring all of `:group-id`, `:artifact-id`, and `:version` when `:sync-pom true` and no `pom.xml` file is present (GAV are now required when you want `depstar` to create your `pom.xml` file).
+  * Fix #59 by decoupling `pom.xml` file handling from `MANIFEST.MF` handling, which makes it possible to build an uberjar without a `pom.xml` file. This also allows you to specify `:aot true` and `:main-class` when building a (thin) JAR file -- but cautions you that it is not recommended!
 
 * 2.0.165 -- 2020-12-28
   * Escape compile process arguments when shelling out on Windows. Fixes #57 via PR #58 (@borkdude).
