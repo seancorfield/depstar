@@ -128,6 +128,8 @@ If you are creating a library and intend to deploy it to Clojars or a similar re
 
 If there is a `pom.xml` file in the current directory, `depstar` will attempt to read it and figure out the **group ID**, **artifact ID**, and **version** of the project. It will use that information to generate `pom.properties` in the JAR file, as well as copying that `pom.xml` file into the JAR file. You can specify `:pom-file` as an exec argument if you want to use a different pom file.
 
+When generating `pom.properties`, `depstar` will attempt to run `git rev-parse HEAD` _in the same directory as the `pom.xml` file_ and will add `revision=<SHA>` to the list of properties if successful.
+
 You can also specify the `:group-id`, `:artifact-id`, and/or `:version` as exec arguments and those values will override what is in the `pom.xml` file. **The `pom.xml` file will be updated to reflect those values.** If the `pom.xml` file contains a VCS `<tag>..</tag>` that matches the version, with any optional prefix, it will also be updated (so `<version>` and `<tag>` will stay in sync).
 
 You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
