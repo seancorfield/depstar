@@ -264,9 +264,17 @@ As noted above, you could also use `deps-deploy` to deploy your JAR file to Cloj
 Add the following alias to your `deps.edn` file:
 
 ```clojure
-    ;; version 0.1.1 was the most recent as of 2020-10-09:
-    :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
-             :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "MyProject.jar"]}
+    ;; version 0.1.5 was the most recent as of 2021-01-29:
+    :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
+             :exec-fn deps-deploy.deps-deploy/deploy
+             :exec-args {:installer :remote :artifact "MyProject.jar"}}
+```
+
+Then:
+
+
+```bash
+clojure -X:deploy
 ```
 
 This expects your Clojars username to be in the `CLOJARS_USERNAME` environment variable and your Clojars **token** to be in the `CLOJARS_PASSWORD` environment variable.

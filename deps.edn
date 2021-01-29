@@ -1,6 +1,6 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.10.1"}
-        org.clojure/tools.deps.alpha {:mvn/version "0.9.857"}
+ :deps {org.clojure/clojure {:mvn/version "1.10.2"}
+        org.clojure/tools.deps.alpha {:mvn/version "0.9.863"}
         org.clojure/tools.logging {:mvn/version "1.1.0"}
         org.clojure/tools.namespace {:mvn/version "1.1.0"}
         org.apache.logging.log4j/log4j-core {:mvn/version "2.14.0"}
@@ -15,8 +15,9 @@
            :jar {:exec-fn hf.depstar/jar
                  :exec-args {:jar depstar.jar
                              :sync-pom true}}
-           :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "RELEASE"}}
-                    :main-opts ["-m" "deps-deploy.deps-deploy" "deploy" "depstar.jar"]}
+           :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+                    :exec-fn deps-deploy.deps-deploy/deploy
+                    :exec-args {:installer :remote :artifact "depstar.jar"}}
            ;; the following aliases are all tests for particular issues:
            :test-issue-5
            {:replace-deps {clj-time/clj-time  {:mvn/version "0.15.0"}
