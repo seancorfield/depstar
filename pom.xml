@@ -31,12 +31,12 @@
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.10.1</version>
+      <version>1.10.2</version>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>tools.deps.alpha</artifactId>
-      <version>0.9.857</version>
+      <version>0.9.863</version>
     </dependency>
     <dependency>
       <groupId>org.clojure</groupId>
