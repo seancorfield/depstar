@@ -1,6 +1,8 @@
 *~
 .java-version
+.clj-kondo
 .cpcache
+.lsp
 .rebel_readline_history
 .socket-repl-port
 *.jar
