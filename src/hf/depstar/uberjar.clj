@@ -13,7 +13,7 @@
                           FileVisitOption FileVisitResult FileVisitor
                           Path)
            (java.nio.file.attribute FileAttribute FileTime)
-           (java.util.jar JarInputStream JarEntry)
+           (java.util.zip ZipEntry ZipFile)
            (org.apache.logging.log4j.core.config.plugins.processor PluginCache))
   (:gen-class))
 
@@ -206,14 +206,9 @@
 
 (defn- consume-jar
   [^Path path f]
-  (with-open [is (-> path
-                     (Files/newInputStream (make-array OpenOption 0))
-                     java.io.BufferedInputStream.
-                     JarInputStream.)]
-    (loop []
-      (when-let [entry (.getNextJarEntry is)]
-        (f is entry)
-        (recur)))))
+  (with-open [in-file (ZipFile. (.toFile path))]
+    (doseq [entry (enumeration-seq (.entries in-file))]
+      (f (.getInputStream in-file entry) entry))))
 
 (defn- classify
   [entry]
@@ -241,7 +236,7 @@
   (when-not (= :thin (:jar-type options))
     (when *verbose* (println src))
     (consume-jar (path src)
-      (fn [inputstream ^JarEntry entry]
+      (fn [inputstream ^ZipEntry entry]
         (let [^String name (.getName entry)
               last-mod (.getLastModifiedTime entry)
               target (.resolve ^Path dest name)]

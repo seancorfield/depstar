@@ -121,3 +121,16 @@
       ;; check this triggered MR JAR flags:
       (is (deref #'sut/multi-release?))
       (is (= "true" (get-in contents [:manifest "Multi-Release"]))))))
+
+(deftest issue-66
+  (println "[#66]")
+  (let [jar (File/createTempFile "test" ".jar")]
+    (is (= {:success true}
+           (sut/build-jar {:jar-type :uber :jar (str jar)
+                           :pom-file (str (File/createTempFile "pom" ".xml"))
+                           :group-id "issue" :artifact-id "bug" :version "66"
+                           :aliases [:test-issue-66]})))
+    #_(let [contents (read-jar jar #"module-info.class")]
+      ;; verify module-info.class not present:
+        (is (not (some #(= "module-info.class" %) (:entries contents))))
+        (is (empty? (:files contents))))))
