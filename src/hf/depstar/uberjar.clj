@@ -5,7 +5,9 @@
             [clojure.tools.deps.alpha :as t]
             [clojure.tools.deps.alpha.gen.pom :as pom]
             [clojure.tools.logging :as logger]
-            [clojure.tools.namespace.find :as tnsf])
+            [clojure.tools.namespace.find :as tnsf]
+            [clojure.tools.namespace.file :as tnsfile]
+            [clojure.tools.namespace.parse :as tnsp])
   (:import (java.io File InputStream PushbackReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
@@ -182,6 +184,10 @@
   [filename]
   (or (some #(re-matches % filename) exclude-patterns)
       (some #(re-matches % filename) *exclude*)))
+
+(defn- included?
+  [filename compile-ns-patterns]
+  (some #(re-matches % filename) compile-ns-patterns))
 
 (defn- copy!
   ;; filename drives strategy
@@ -597,22 +603,27 @@
                           (:classpath-roots basis))
 
           ;; expand :all and regex string using tools.namespace:
-          ns-regexs (filter string? compile-ns)
+          compile-ns-patterns (filter string? compile-ns)
           compile-ns (cond-> (vec (filter symbol? compile-ns))
-                       (seq ns-regexs)
+                       (seq compile-ns-patterns)
                        (into (comp
-                               (map io/file)
-                               (mapcat tnsf/find-namespaces-in-dir)
-                               (filter #(some string?
-                                              (for [re ns-regexs]
-                                                (re-find (re-pattern re) (str %))))))
+                              (map io/file)
+                              (mapcat #(let [sources (tnsf/find-clojure-sources-in-dir %)]
+                                         (for [s sources] {:dir % :clj-source s})))
+                              (filter (fn [{:keys [dir clj-source]}]
+                                        (let [base-path (-> (.getCanonicalPath ^File dir) (str "/"))
+                                              file-full-name (.getCanonicalPath ^File clj-source)
+                                              file-name (str/replace file-full-name (re-pattern base-path) "")]
+                                          (included? file-name (map re-pattern compile-ns-patterns)))))
+                              (map (fn [{:keys [clj-source]}]
+                                     (tnsp/name-from-ns-decl (tnsfile/read-file-ns-decl clj-source)))))
                              cp)
 
                        (= :all compile-ns)
                        (into (comp
-                               (filter #(= :directory (classify %)))
-                               (map io/file)
-                               (mapcat tnsf/find-namespaces-in-dir))
+                              (filter #(= :directory (classify %)))
+                              (map io/file)
+                              (mapcat tnsf/find-namespaces-in-dir))
                              cp))
 
           ;; force AOT if compile-ns explicitly requested:

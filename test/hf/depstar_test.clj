@@ -76,6 +76,25 @@
         (is (= 4 (count (filter #(str/ends-with? % ".clj") contents))))
         (is (< 50 (count (filter #(str/ends-with? % ".class") contents)) 100))))))
 
+(deftest compile-ns-using-regex-test
+  (let [jar (File/createTempFile "test" ".jar")]
+    (println "[COMPILATION/REGEX]")
+    (testing "Reproducing the same result of :compile-ns with symbol using regex"
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
+                             :compile-ns ["hf/depstar.*.clj"]})))
+      (let [contents (:entries (read-jar jar))]
+        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
+                                       (str/ends-with? % ".class")) contents))
+               100))))
+    (testing "Regex must be a full file match."
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
+                             :compile-ns ["hf/deps"]})))
+      (let [contents (:entries (read-jar jar))]
+        (is (zero? (count (filter #(and (str/starts-with? % "hf/depstar")
+                                        (str/ends-with? % ".class")) contents))))))))
+
 (deftest issue-5
   (println "[#5]")
   (let [jar (File/createTempFile "test" ".jar")]
