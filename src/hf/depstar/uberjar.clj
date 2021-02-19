@@ -5,9 +5,7 @@
             [clojure.tools.deps.alpha :as t]
             [clojure.tools.deps.alpha.gen.pom :as pom]
             [clojure.tools.logging :as logger]
-            [clojure.tools.namespace.find :as tnsf]
-            [clojure.tools.namespace.file :as tnsfile]
-            [clojure.tools.namespace.parse :as tnsp])
+            [clojure.tools.namespace.find :as tnsf])
   (:import (java.io File InputStream PushbackReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
@@ -607,16 +605,9 @@
           compile-ns (cond-> (vec (filter symbol? compile-ns))
                        (seq compile-ns-patterns)
                        (into (comp
-                              (map io/file)
-                              (mapcat #(let [sources (tnsf/find-clojure-sources-in-dir %)]
-                                         (for [s sources] {:dir % :clj-source s})))
-                              (filter (fn [{:keys [dir clj-source]}]
-                                        (let [base-path (-> (.getCanonicalPath ^File dir) (str "/"))
-                                              file-full-name (.getCanonicalPath ^File clj-source)
-                                              file-name (str/replace file-full-name (re-pattern base-path) "")]
-                                          (included? file-name (map re-pattern compile-ns-patterns)))))
-                              (map (fn [{:keys [clj-source]}]
-                                     (tnsp/name-from-ns-decl (tnsfile/read-file-ns-decl clj-source)))))
+                               (map io/file)
+                               (mapcat tnsf/find-namespaces-in-dir)
+                               (filter #(included? (str %) (map re-pattern compile-ns-patterns))))
                              cp)
 
                        (= :all compile-ns)
