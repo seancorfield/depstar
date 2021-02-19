@@ -93,7 +93,18 @@
                              :compile-ns ["hf.deps"]})))
       (let [contents (:entries (read-jar jar))]
         (is (zero? (count (filter #(and (str/starts-with? % "hf/depstar")
-                                        (str/ends-with? % ".class")) contents))))))))
+                                        (str/ends-with? % ".class")) contents))))))
+    (testing "And symbol with regexp mixed should work too."
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
+                             :compile-ns ['hf.depstar "hf.depstar.uber.*"]})))
+      (let [contents (:entries (read-jar jar))]
+        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
+                                       (str/ends-with? % ".class")) contents))
+               100))
+        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar/uberjar")
+                                       (str/ends-with? % ".class")) contents))
+               100))))))
 
 (deftest issue-5
   (println "[#5]")
