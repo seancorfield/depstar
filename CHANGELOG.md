@@ -1,6 +1,7 @@
 # Changes
 
 * 2.0.next in progress
+  * Allow `:compile-ns` to accept regex strings to match namespaces (as well as symbols). PR #67 @wandersoncferreira (bartuka)
   * Fix #66 by switching from "jar" processing to "zip" processing and using `.entries` instead of calling `.getNextEntry` (the latter checks CRCs, the former doesn't apparently).
 
 * 2.0.171 -- 2021-01-29
