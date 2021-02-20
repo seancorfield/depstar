@@ -16,7 +16,7 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 {
   :aliases {:depstar
               {:replace-deps
-                 {seancorfield/depstar {:mvn/version "2.0.171"}}
+                 {seancorfield/depstar {:mvn/version "2.0.187"}}
                :ns-default hf.depstar
                :exec-args {}}}
 }
@@ -214,7 +214,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:replace-deps {seancorfield/depstar {:mvn/version "2.0.171"}}
+  :uberjar {:replace-deps {seancorfield/depstar {:mvn/version "2.0.187"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -296,7 +296,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 2.0.171
+Latest stable release: 2.0.187
 
 # License
 
