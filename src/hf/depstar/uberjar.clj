@@ -183,6 +183,10 @@
   (or (some #(re-matches % filename) exclude-patterns)
       (some #(re-matches % filename) *exclude*)))
 
+(defn- included?
+  [filename compile-ns-patterns]
+  (some #(re-matches % filename) compile-ns-patterns))
+
 (defn- copy!
   ;; filename drives strategy
   [filename ^InputStream in ^Path target last-mod]
@@ -535,7 +539,7 @@
   (println "  :aot true          -- enable AOT compilation for uberjar")
   (println "  :artifact-id sym   -- specify artifact ID to be used")
   (println "  :classpath <cp>    -- override classpath")
-  (println "  :compile-ns [syms] -- optional list of namespaces to AOT compile")
+  (println "  :compile-ns [syms | <regex>] -- optional list of namespaces to AOT compile")
   (println "  :debug-clash true  -- print warnings about clashing jar items")
   (println "  (can be useful if you are not getting the files you expect in the JAR)")
   (println "  :exclude <regex>   -- exclude files via regex")
@@ -596,15 +600,23 @@
           cp          (or (some-> classpath (parse-classpath))
                           (:classpath-roots basis))
 
-          ;; expand :all using tools.namespace:
-          compile-ns  (if (= :all compile-ns)
-                        (into []
-                              (comp
-                               (filter #(= :directory (classify %)))
+          ;; expand :all and regex string using tools.namespace:
+          compile-ns-patterns (filter string? compile-ns)
+          compile-ns (cond-> (vec (filter symbol? compile-ns))
+                       (seq compile-ns-patterns)
+                       (into (comp
                                (map io/file)
-                               (mapcat tnsf/find-namespaces-in-dir))
-                              cp)
-                        compile-ns)
+                               (mapcat tnsf/find-namespaces-in-dir)
+                               (filter #(included? (str %) (map re-pattern compile-ns-patterns))))
+                             cp)
+
+                       (= :all compile-ns)
+                       (into (comp
+                              (filter #(= :directory (classify %)))
+                              (map io/file)
+                              (mapcat tnsf/find-namespaces-in-dir))
+                             cp))
+
           ;; force AOT if compile-ns explicitly requested:
           do-aot      (or aot (seq compile-ns))
           ;; compile main-class at least (if also do-aot):

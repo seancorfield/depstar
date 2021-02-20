@@ -103,6 +103,8 @@ java -jar MyProject.jar
 
 You can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols (not regular expressions). It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
 
+You can also specify regex strings inside `:compile-ns` vector. Regex strings and symbols for namespaces can coexist in the same vector.
+
 ```bash
 clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
 ```
