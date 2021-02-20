@@ -487,38 +487,42 @@
                     (assoc :version version))})))))
 
 (defn- compile-arguments
-  "Given a namespace to compile (a symbol), the classpath, and
-  the temporary directory to write the classes to, return the
-  process arguments that would compile it (java -cp ...)."
-  [ns-sym cp tmp-c-dir]
+  "Given a namespace to compile (a symbol), a vector of JVM
+  options to apply, the classpath, and the temporary directory
+  to write the classes to, return the process arguments that
+  would compile it (java -cp ...)."
+  [ns-sym jvm-opts cp tmp-c-dir]
   (let [java     (or (System/getenv "JAVA_CMD") "java")
         windows? (-> (System/getProperty "os.name")
                      (str/lower-case)
                      (str/includes? "windows"))
-        args     [java "-cp"
-                       (str/join (System/getProperty "path.separator") cp)
-                       "clojure.main"
-                       "-e"
-                       (str "(binding,[*compile-path*,"
-                            (pr-str (str tmp-c-dir))
-                            "],(compile,'"
-                            (name ns-sym)
-                            "))")]]
+        args     (-> [java]
+                     (into jvm-opts)
+                     (into ["-cp"
+                            (str/join (System/getProperty "path.separator") cp)
+                            "clojure.main"
+                            "-e"
+                            (str "(binding,[*compile-path*,"
+                                 (pr-str (str tmp-c-dir))
+                                 "],(compile,'"
+                                 (name ns-sym)
+                                 "))")]))]
     (if windows?
       (mapv #(str/replace % "\"" "\\\"") args)
       args)))
 
 (defn- compile-it
-  "Given a namespace to compile (a symbol), the classpath, and
-  the temporary directory to write the classes to, compile the
-  namespace and return a Boolean indicating any failures (the
-  failures will be printed to standard error)."
-  [ns-sym cp tmp-c-dir]
+  "Given a namespace to compile (a symbol), a vector of JVM
+  options, the classpath, and the temporary directory to
+  write the classes to, compile the namespace and return
+  a Boolean indicating any failures (the failures will be
+  printed to standard error)."
+  [ns-sym jvm-opts cp tmp-c-dir]
   (logger/info "Compiling" ns-sym "...")
   (let [p (.start
            (ProcessBuilder.
             ^"[Ljava.lang.String;"
-            (into-array String (compile-arguments ns-sym cp tmp-c-dir))))]
+            (into-array String (compile-arguments ns-sym jvm-opts cp tmp-c-dir))))]
     (.waitFor p)
     (let [stderr (slurp (.getErrorStream p))]
       (when (seq stderr) (println stderr))
@@ -547,6 +551,7 @@
   (println "  :group-id sym      -- specify group ID to be used")
   (println "  :help true         -- show this help (and exit)")
   (println "  :jar sym-or-str    -- specify the name of the JAR file")
+  (println "  :jvm-opts [strs]   -- optional list of JVM options for AOT compilation")
   (println "  :main-class sym    -- specify the main namespace (or class)")
   (println "  :no-pom true       -- ignore pom.xml")
   (println "  :pom-file str      -- optional path to a different 'pom.xml' file")
@@ -568,7 +573,7 @@
 
   Additional detail about success and failure is also logged."
   [{:keys [aot classpath compile-ns debug-clash exclude
-           help jar jar-type main-class no-pom pom-file
+           help jar jar-type jvm-opts main-class no-pom pom-file
            sync-pom verbose]
     :or {jar-type :uber}
     :as options}]
@@ -583,6 +588,9 @@
 
     :else
     (let [jar        (some-> jar str) ; ensure we have a string
+          _          (when (and jvm-opts (not (sequential? jvm-opts)))
+                       (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
+          jvm-opts   (if (sequential? jvm-opts) (vec jvm-opts) [])
           main-class (some-> main-class str) ; ensure we have a string
           options    (assoc options ; ensure defaulted/processed options present
                             :jar        jar
@@ -606,9 +614,9 @@
           compile-ns (cond-> (vec (filter symbol? compile-ns))
                        (seq compile-ns-patterns)
                        (into (comp
-                               (map io/file)
-                               (mapcat tnsf/find-namespaces-in-dir)
-                               (filter #(included? (str %) (map re-pattern compile-ns-patterns))))
+                              (map io/file)
+                              (mapcat tnsf/find-namespaces-in-dir)
+                              (filter #(included? (str %) (map re-pattern compile-ns-patterns))))
                              cp)
 
                        (= :all compile-ns)
@@ -621,11 +629,11 @@
           ;; force AOT if compile-ns explicitly requested:
           do-aot      (or aot (seq compile-ns))
           ;; compile main-class at least (if also do-aot):
-          compile-ns  (or compile-ns [main-class])
+          compile-ns  (or (not-empty compile-ns) [main-class])
           tmp-c-dir   (when do-aot
                         (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
           cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
-          aot-failure (when do-aot (some #(compile-it % cp tmp-c-dir) compile-ns))]
+          aot-failure (when do-aot (some #(compile-it % jvm-opts cp tmp-c-dir) compile-ns))]
 
       (if aot-failure
 

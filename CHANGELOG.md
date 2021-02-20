@@ -3,6 +3,7 @@
 * 2.0.next in progress
   * Allow `:compile-ns` to accept regex strings to match namespaces (as well as symbols). PR #67 @wandersoncferreira (bartuka)
   * Fix #66 by switching from "jar" processing to "zip" processing and using `.entries` instead of calling `.getNextEntry` (the latter checks CRCs, the former doesn't apparently).
+  * Fix #64 by adding a `:jvm-opts` exec argument for passing JVM options to the AOT compilation subprocess.
 
 * 2.0.171 -- 2021-01-29
   * Fix #56 by requiring all of `:group-id`, `:artifact-id`, and `:version` when `:sync-pom true` and no `pom.xml` file is present (GAV are now required when you want `depstar` to create your `pom.xml` file).

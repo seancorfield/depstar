@@ -122,6 +122,17 @@ This will compile the `project.core` namespace, **which must have a `(:gen-class
 
 Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources). See the `:exclude` option for ways to exclude unwanted compiled `.class` files.
 
+AOT compilation is performed in a subprocess so the JVM options in effect when you
+run `depstar` do not affect the actual compilation of the code going into the JAR file.
+The `:jvm-opts` exec argument lets you pass a vector of strings into that subprocess to
+provide JVM options that will apply during compilation, such as enabling direct linking:
+
+```bash
+clojure -X:depstar uberjar :jar MyProject.jar \
+    :aot true :main-class project.core \
+    :jvm-opts '["-Dclojure.compiler.direct-linking=true"]'
+```
+
 ## `pom.xml`
 
 If you are creating a library and intend to deploy it to Clojars or a similar repository, you will need a `pom.xml` file.
@@ -189,6 +200,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:group-id` -- if specified, the symbol used for the `groupId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
+* `:jvm-opts` -- an optional vector of JVM option strings that should be passed to the `java` subprocess that performs AOT compilation
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the legacy `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the legacy `-n` / `--no-pom` option)
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
