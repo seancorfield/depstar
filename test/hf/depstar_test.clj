@@ -203,6 +203,29 @@
                                         :aliases [:test-issue-64]}))))))
     (is (= {:success true} @res))))
 
+(deftest issue-65
+  (println "[#65]")
+  (let [jar (File/createTempFile "test" ".jar")
+        ds  (io/file "test-65/.DS_Store")
+        ds? (.exists ds)]
+    (when-not ds?
+      (spit "test-65/.DS_Store" "go away"))
+    (try
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :uber :jar (str jar)
+                             :pom-file (str (File/createTempFile "pom" ".xml"))
+                             :group-id "issue" :artifact-id "bug" :version "65"
+                             :aliases [:test-issue-65]})))
+      (let [contents (read-jar jar #".*\.[kD].*")]
+        ;; verify .keep is not present:
+        (is (not (some #(= ".keep" %) (:entries contents))))
+        ;; verify .DS_Store is not present:
+        (is (not (some #(= ".DS_Store" %) (:entries contents))))
+        (is (empty? (:files contents))))
+      (finally
+        (when-not ds?
+          (.delete ds))))))
+
 (deftest issue-66
   (println "[#66]")
   (let [jar (File/createTempFile "test" ".jar")]

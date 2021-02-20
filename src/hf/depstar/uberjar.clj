@@ -173,8 +173,9 @@
   "Filename patterns to exclude. These are checked with re-matches and
   should therefore be complete filename matches including any path."
   [#"project.clj"
-   #"\.keep"
-   #".*\.pom$" #"module-info\.class$"
+   #"(.*/)?\.DS_Store"
+   #"(.*/)?\.keep"
+   #".*\.pom" #"module-info\.class"
    #"(?i)META-INF/.*\.(?:MF|SF|RSA|DSA)"
    #"(?i)META-INF/(?:INDEX\.LIST|DEPENDENCIES)(?:\.txt)?"])
 
