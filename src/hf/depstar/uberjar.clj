@@ -488,14 +488,23 @@
 
 (defn- compile-arguments
   "Given a namespace to compile (a symbol), a vector of JVM
-  options to apply, the classpath, and the temporary directory
-  to write the classes to, return the process arguments that
-  would compile it (java -cp ...)."
-  [ns-sym jvm-opts cp tmp-c-dir]
+  options to apply, the classpath, a symbol for the compile
+  function, and the temporary directory to write the classes
+  to, return the process arguments that would compile it
+    (java -cp ...).
+  If compile-fn is omitted (nil), clojure.core/compile is
+  used. Otherwise, a require of the namespace is added and
+  a call of resolve is added."
+  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
   (let [java     (or (System/getenv "JAVA_CMD") "java")
         windows? (-> (System/getProperty "os.name")
                      (str/lower-case)
                      (str/includes? "windows"))
+        comp-req (when-let [comp-ns (and compile-fn (namespace compile-fn))]
+                   (str "(require,'" comp-ns "),"))
+        comp-fn  (if compile-fn
+                   (str "(resolve,'" compile-fn ")")
+                   "compile")
         args     (-> [java]
                      (into jvm-opts)
                      (into ["-cp"
@@ -504,7 +513,7 @@
                             "-e"
                             (str "(binding,[*compile-path*,"
                                  (pr-str (str tmp-c-dir))
-                                 "],(compile,'"
+                                 "]," comp-req "(" comp-fn ",'"
                                  (name ns-sym)
                                  "))")]))]
     (if windows?
@@ -513,16 +522,19 @@
 
 (defn- compile-it
   "Given a namespace to compile (a symbol), a vector of JVM
-  options, the classpath, and the temporary directory to
-  write the classes to, compile the namespace and return
-  a Boolean indicating any failures (the failures will be
-  printed to standard error)."
-  [ns-sym jvm-opts cp tmp-c-dir]
+  options to apply, the classpath, a symbol for the compile
+  function, and the temporary directory to write the classes
+  to, compile the namespace and return a Boolean indicating
+  any failures (the failures will be printed to standard
+  error)."
+  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
   (logger/info "Compiling" ns-sym "...")
   (let [p (.start
            (ProcessBuilder.
             ^"[Ljava.lang.String;"
-            (into-array String (compile-arguments ns-sym jvm-opts cp tmp-c-dir))))]
+            (into-array
+             String
+             (compile-arguments ns-sym jvm-opts cp compile-fn tmp-c-dir))))]
     (.waitFor p)
     (let [stderr (slurp (.getErrorStream p))]
       (when (seq stderr) (println stderr))
@@ -543,6 +555,7 @@
   (println "  :aot true          -- enable AOT compilation for uberjar")
   (println "  :artifact-id sym   -- specify artifact ID to be used")
   (println "  :classpath <cp>    -- override classpath")
+  (println "  :compile-fn sym    -- specify a custom compile function to use")
   (println "  :compile-ns [matches] -- optional list of namespaces to AOT compile")
   (println "                        matches can be symbols or regex strings")
   (println "  :debug-clash true  -- print warnings about clashing jar items")
@@ -572,7 +585,7 @@
     * `:copy-failure` -- one or more files could not be copied into the JAR
 
   Additional detail about success and failure is also logged."
-  [{:keys [aot classpath compile-ns debug-clash exclude
+  [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
            help jar jar-type jvm-opts main-class no-pom pom-file
            sync-pom verbose]
     :or {jar-type :uber}
@@ -633,7 +646,9 @@
           tmp-c-dir   (when do-aot
                         (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
           cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
-          aot-failure (when do-aot (some #(compile-it % jvm-opts cp tmp-c-dir) compile-ns))]
+          aot-failure (when do-aot
+                        (some #(compile-it % jvm-opts cp compile-fn tmp-c-dir)
+                              compile-ns))]
 
       (if aot-failure
 

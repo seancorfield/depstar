@@ -152,6 +152,30 @@
       (is (deref #'sut/multi-release?))
       (is (= "true" (get-in contents [:manifest "Multi-Release"]))))))
 
+(defn print-err
+  "Only standard error is printed from the compilation
+  process so this is a function that simply prints its
+  (symbol) argument to standard error!"
+  [sym]
+  (binding [*out* *err*]
+    (println "print-err:" sym)))
+
+(deftest issue-63-compile-fn
+  (println "[#63/COMPILE-FN]")
+  (let [jar (File/createTempFile "test" ".jar")
+        res (atom nil)]
+    (is (re-find
+         #"print-err: please.print.me!"
+         (with-out-str
+           (reset! res
+                   (sut/build-jar {:jar-type :uber :jar (str jar)
+                                   :aot true :main-class 'please.print.me!
+                                   :compile-fn 'hf.depstar-test/print-err
+                                   :aliases [:test]
+                                   :pom-file (str (File/createTempFile "pom" ".xml"))
+                                   :group-id "issue" :artifact-id "bug" :version "63"})))))
+    (is (= {:success true} @res))))
+
 (deftest issue-64-jvm-opts
   (println "[#64/JVM-OPTS]")
   (let [jar (File/createTempFile "test" ".jar")
