@@ -1,6 +1,10 @@
 # Changes
 
+* 2.0.188 -- 2021-02-23
+  * Fix #68 so `:compile-ns :all` works again (broken in 2.0.187).
+
 * 2.0.187 -- 2021-02-20
+  * **NOTE: `:compile-ns :all` is broken in this release!**
   * Allow `:compile-ns` to accept regex strings to match namespaces (as well as symbols). PR #67 @wandersoncferreira (bartuka)
   * Fix #66 by switching from "jar" processing to "zip" processing and using `.entries` instead of calling `.getNextEntry` (the latter checks CRCs, the former doesn't apparently).
   * Address #65 by ignoring `.DS_Store` files.

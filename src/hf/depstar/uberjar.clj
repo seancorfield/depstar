@@ -185,8 +185,8 @@
       (some #(re-matches % filename) *exclude*)))
 
 (defn- included?
-  [filename compile-ns-patterns]
-  (some #(re-matches % filename) compile-ns-patterns))
+  [filename patterns]
+  (some #(re-matches % filename) patterns))
 
 (defn- copy!
   ;; filename drives strategy
@@ -624,26 +624,31 @@
                           (:classpath-roots basis))
 
           ;; expand :all and regex string using tools.namespace:
-          compile-ns-patterns (filter string? compile-ns)
-          compile-ns (cond-> (vec (filter symbol? compile-ns))
-                       (seq compile-ns-patterns)
-                       (into (comp
-                              (map io/file)
-                              (mapcat tnsf/find-namespaces-in-dir)
-                              (filter #(included? (str %) (map re-pattern compile-ns-patterns))))
-                             cp)
-
-                       (= :all compile-ns)
-                       (into (comp
-                              (filter #(= :directory (classify %)))
-                              (map io/file)
-                              (mapcat tnsf/find-namespaces-in-dir))
-                             cp))
+          dir-file-ns (comp
+                       (filter #(= :directory (classify %)))
+                       (map io/file)
+                       (mapcat tnsf/find-namespaces-in-dir))
+          compile-ns (cond (= :all compile-ns)
+                           (into [] dir-file-ns cp)
+                           (sequential? compile-ns)
+                           (let [patterns (into []
+                                                (comp (filter string?)
+                                                      (map re-pattern))
+                                                compile-ns)]
+                             (cond-> (filterv symbol? compile-ns)
+                               (seq patterns)
+                               (into (comp
+                                      dir-file-ns
+                                      (filter #(included? (str %) patterns)))
+                                     cp)))
+                           :else
+                           (when compile-ns
+                             (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
 
           ;; force AOT if compile-ns explicitly requested:
           do-aot      (or aot (seq compile-ns))
           ;; compile main-class at least (if also do-aot):
-          compile-ns  (or (not-empty compile-ns) [main-class])
+          compile-ns  (or (seq compile-ns) [main-class])
           tmp-c-dir   (when do-aot
                         (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
           cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)

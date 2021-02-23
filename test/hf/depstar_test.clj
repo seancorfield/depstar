@@ -79,6 +79,14 @@
 (deftest compile-ns-using-regex-test
   (let [jar (File/createTempFile "test" ".jar")]
     (println "[COMPILATION/REGEX]")
+    (testing "Ensure :compile-ns :all still works"
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
+                             :compile-ns :all})))
+      (let [contents (:entries (read-jar jar))]
+        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
+                                       (str/ends-with? % ".class")) contents))
+               100))))
     (testing "Reproducing the same result of :compile-ns with symbol using regex"
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
