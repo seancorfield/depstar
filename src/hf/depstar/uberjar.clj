@@ -561,7 +561,7 @@
   (println "                        matches can be symbols or regex strings")
   (println "  :debug-clash true  -- print warnings about clashing jar items")
   (println "  (can be useful if you are not getting the files you expect in the JAR)")
-  (println "  :exclude <regex>   -- exclude files via regex")
+  (println "  :exclude [regex]   -- exclude files via regex")
   (println "  :group-id sym      -- specify group ID to be used")
   (println "  :help true         -- show this help (and exit)")
   (println "  :jar sym-or-str    -- specify the name of the JAR file")
