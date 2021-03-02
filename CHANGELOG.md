@@ -1,6 +1,7 @@
 # Changes
 
-* 2.0.next in progress
+* 2.0.193 -- 2021-03-02
+  * Change coordinates to `com.github.seancorfield/depstar` (although new versions will continue to be deployed to `seancorfield/depstar` for a while -- see the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names)).
   * Fix #70 by encouraging reverse domain names for group IDs in the README and adding a warning if `:group-id` is specified and does not contain at least one `.`.
   * Fix #69 by adding `:manifest` option to populate `MANIFEST.MF` file.
 

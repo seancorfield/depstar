@@ -11,7 +11,7 @@
 
   In `:aliases`:
 ```clojure
-      :jar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
+      :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version ...}}
             :exec-fn hf.depstar/jar
             :exec-args {}}
 ```
@@ -22,7 +22,7 @@
   If the destination JAR file is fixed, it could be added to `:exec-args` in
   `deps.edn`:
 ```clojure
-      :jar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
+      :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version ...}}
             :exec-fn hf.depstar/jar
             :exec-args {:jar MyProject.jar}}
 ```
@@ -37,7 +37,7 @@
 
   In `:aliases`:
 ```clojure
-      :uberjar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
+      :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version ...}}
                 :exec-fn hf.depstar/uberjar
                 :exec-args {}}
 ```
@@ -49,7 +49,7 @@
   they could be added to `:exec-args` in
   `deps.edn`:
 ```clojure
-      :uberjar {:replace-deps {seancorfield/depstar {:mvn/version ...}}
+      :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version ...}}
                 :exec-fn hf.depstar/uberjar
                 :exec-args {:aot true
                             :jar MyProject.jar
