@@ -562,7 +562,7 @@
   (println "  :debug-clash true  -- print warnings about clashing jar items")
   (println "  (can be useful if you are not getting the files you expect in the JAR)")
   (println "  :exclude [regex]   -- exclude files via regex")
-  (println "  :group-id sym      -- specify group ID to be used")
+  (println "  :group-id sym      -- specify group ID to be used (reverse domain name preferred)")
   (println "  :help true         -- show this help (and exit)")
   (println "  :jar sym-or-str    -- specify the name of the JAR file")
   (println "  :jvm-opts [strs]   -- optional list of JVM options for AOT compilation")
@@ -587,7 +587,7 @@
 
   Additional detail about success and failure is also logged."
   [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
-           help jar jar-type jvm-opts main-class no-pom pom-file
+           group-id help jar jar-type jvm-opts main-class no-pom pom-file
            sync-pom verbose]
     :or {jar-type :uber}
     :as options}]
@@ -604,6 +604,8 @@
     (let [jar        (some-> jar str) ; ensure we have a string
           _          (when (and jvm-opts (not (sequential? jvm-opts)))
                        (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
+          _          (when (and group-id (not (re-find #"\." (str group-id))))
+                       (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
           jvm-opts   (if (sequential? jvm-opts) (vec jvm-opts) [])
           main-class (some-> main-class str) ; ensure we have a string
           options    (assoc options ; ensure defaulted/processed options present

@@ -120,7 +120,7 @@
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
                            :pom-file (str (File/createTempFile "pom" ".xml"))
-                           :group-id "issue" :artifact-id "bug" :version "5"
+                           :group-id "depstar.issue" :artifact-id "bug" :version "5"
                            :exclude ["org/joda/time/.*"]
                            :aliases [:test-issue-5]})))
     (let [contents (read-jar jar #"data_readers.clj")
@@ -140,7 +140,7 @@
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
                            :pom-file (str (File/createTempFile "pom" ".xml"))
-                           :group-id "issue" :artifact-id "bug" :version "7"
+                           :group-id "depstar.issue" :artifact-id "bug" :version "7"
                            :aliases [:test-issue-7]})))
     (let [contents (read-jar jar #"module-info.class")]
       ;; verify module-info.class not present:
@@ -153,7 +153,7 @@
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
                            :pom-file (str (File/createTempFile "pom" ".xml"))
-                           :group-id "issue" :artifact-id "feature" :version "22"
+                           :group-id "depstar.issue" :artifact-id "feature" :version "22"
                            :aliases [:test-issue-22]})))
     (let [contents (read-jar jar)]
       ;; check this triggered MR JAR flags:
@@ -181,7 +181,7 @@
                                    :compile-fn 'hf.depstar-test/print-err
                                    :aliases [:test]
                                    :pom-file (str (File/createTempFile "pom" ".xml"))
-                                   :group-id "issue" :artifact-id "bug" :version "63"})))))
+                                   :group-id "depstar.issue" :artifact-id "bug" :version "63"})))))
     (is (= {:success true} @res))))
 
 (deftest issue-64-jvm-opts
@@ -196,7 +196,7 @@
                                    :aot true :main-class 'issue-64
                                    :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
                                    :pom-file (str (File/createTempFile "pom" ".xml"))
-                                   :group-id "issue" :artifact-id "bug" :version "64"
+                                   :group-id "depstar.issue" :artifact-id "bug" :version "64"
                                    :aliases [:test-issue-64]})))))
     (is (= {:success true} @res))
     (is (not (re-find
@@ -207,7 +207,7 @@
                                         :aot true :main-class 'issue-64
                                         ;:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
                                         :pom-file (str (File/createTempFile "pom" ".xml"))
-                                        :group-id "issue" :artifact-id "bug" :version "64"
+                                        :group-id "depstar.issue" :artifact-id "bug" :version "64"
                                         :aliases [:test-issue-64]}))))))
     (is (= {:success true} @res))))
 
@@ -222,7 +222,7 @@
       (is (= {:success true}
              (sut/build-jar {:jar-type :uber :jar (str jar)
                              :pom-file (str (File/createTempFile "pom" ".xml"))
-                             :group-id "issue" :artifact-id "bug" :version "65"
+                             :group-id "depstar.issue" :artifact-id "bug" :version "65"
                              :aliases [:test-issue-65]})))
       (let [contents (read-jar jar #".*\.[kD].*")]
         ;; verify .keep is not present:
@@ -240,5 +240,5 @@
     (is (= {:success true}
            (sut/build-jar {:jar-type :uber :jar (str jar)
                            :pom-file (str (File/createTempFile "pom" ".xml"))
-                           :group-id "issue" :artifact-id "bug" :version "66"
+                           :group-id "depstar.issue" :artifact-id "bug" :version "66"
                            :aliases [:test-issue-66]})))))

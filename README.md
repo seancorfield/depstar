@@ -8,7 +8,7 @@ For support, help, general questions, use the [#depstar channel on the Clojurian
 
 # Basic Usage
 
-> Note: these instructions assume you have at least version 1.10.1.727 of the Clojure CLI installed.
+> Note: these instructions assume you have at least version 1.10.1.727 of the Clojure CLI installed. See [Clojure Tools Releases](https://clojure.org/releases/tools) for details about the functionality in recent CLI releases.
 
 Install this tool to an alias in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
@@ -29,6 +29,7 @@ clojure -X:depstar jar :jar MyLib.jar
 ```
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
+For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
 
 Create an uberjar by invoking `depstar` with the desired jar name:
 
@@ -142,12 +143,13 @@ If there is a `pom.xml` file in the current directory, `depstar` will attempt to
 When generating `pom.properties`, `depstar` will attempt to run `git rev-parse HEAD` _in the same directory as the `pom.xml` file_ and will add `revision=<SHA>` to the list of properties if successful.
 
 You can also specify the `:group-id`, `:artifact-id`, and/or `:version` as exec arguments and those values will override what is in the `pom.xml` file. **The `pom.xml` file will be updated to reflect those values.** If the `pom.xml` file contains a VCS `<tag>..</tag>` that matches the version, with any optional prefix, it will also be updated (so `<version>` and `<tag>` will stay in sync).
+Again, if you intend to deploy a library to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
 
 You can suppress the consumption of the `pom.xml` file with the `:no-pom true` option.
 
 You can generate a minimal `pom.xml` file using the `clojure -Spom` command (and that will also update the dependencies in an existing `pom.xml` based on `deps.edn`). `depstar` can run this for you, using the same computed project basis that it uses for building the JAR file: specify the `:sync-pom true` exec argument to perform this step:
 
-* If no `pom.xml` file exists (where `:pom-file` specifies or else in the current directory), you will also need to specify `:group-id`, `:artifact-id`, and `:version`, and a minimal pom file will be created.
+* If no `pom.xml` file exists (where `:pom-file` specifies or else in the current directory), you will also need to specify `:group-id`, `:artifact-id`, and `:version`, and a minimal pom file will be created. Your group ID should generally be a reverse domain name, such as `net.clojars.username`, `com.github.username`, `com.mycompany`, etc.
 * If a `pom.xml` file already exists (per `:pom-file` or in the current directory), it will be updated to reflect the latest dependencies from the project basis, and any `:group-id`/`:artifact-id` pair and/or `:version` supplied as exec arguments.
 
 If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, you can run the resulting file as follows:
@@ -198,7 +200,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:compile-ns` -- if specified, a vector of symbols and regexes to match namespaces to compile, and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR (like the legacy `-X` / `--exclude` option)
-* `:group-id` -- if specified, the symbol used for the `groupId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
+* `:group-id` -- if specified, the symbol used for the `groupId` field in `pom.xml` and `pom.properties` when building the JAR file (this should generally be a reverse domain name); **your `pom.xml` file will be updated to match!**
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
 * `:jvm-opts` -- an optional vector of JVM option strings that should be passed to the `java` subprocess that performs AOT compilation
