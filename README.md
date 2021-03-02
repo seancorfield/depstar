@@ -205,6 +205,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:jar-type` -- can be `:thin` or `:uber` -- defaults to `:thin` for `hf.depstar/jar` and to `:uber` for `hf.depstar/uberjar` (and can therefore be omitted in most cases)
 * `:jvm-opts` -- an optional vector of JVM option strings that should be passed to the `java` subprocess that performs AOT compilation
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the legacy `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
+* `:manifest` -- an optional hash map of additional properties to add to `MANIFEST.MF`, e.g., `:manifest {:class-path "/path/to/some.jar"}` will add the line `Class-Path: /path/to/some.jar` that file
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the legacy `-n` / `--no-pom` option)
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots

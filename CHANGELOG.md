@@ -2,6 +2,7 @@
 
 * 2.0.next in progress
   * Fix #70 by encouraging reverse domain names for group IDs in the README and adding a warning if `:group-id` is specified and does not contain at least one `.`.
+  * Fix #69 by adding `:manifest` option to populate `MANIFEST.MF` file.
 
 * 2.0.188 -- 2021-02-23
   * Fix #68 so `:compile-ns :all` works again (broken in 2.0.187).

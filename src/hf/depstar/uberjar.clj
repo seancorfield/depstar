@@ -388,9 +388,30 @@
                                    (str "<tag>$1" version "</tag>"))))))
     result))
 
+(defn- manifest-properties
+  "Given a hash map of options, if `:manifest` is present and
+  is a hash map, return a string of the contents suitable for
+  adding to the manifest. Else return nil."
+  [{:keys [manifest]}]
+  (str/join
+   (reduce-kv (fn [mf k v]
+                (conj mf
+                      (-> k (name) (str/split #"-")
+                          (->> (map str/capitalize) (str/join "-")))
+                      ": "
+                      v
+                      "\n"))
+              []
+              manifest)))
+
+(comment
+  (manifest-properties {:manifest {:class-path "/opt/whatever/whatever.jar"
+                                   :some-thing-else "42"}})
+  .)
+
 (defn- copy-manifest
   "Create a MANIFEST.MF file and add it to the JAR."
-  [^Path dest {:keys [jar-type main-class]}]
+  [^Path dest {:keys [jar-type main-class] :as options}]
   (let [jdk         (str/replace (System/getProperty "java.version")
                                  #"_.*" "")
         build-now   (java.util.Date.)
@@ -407,7 +428,8 @@
                                 (if main-class
                                   (str/replace main-class "-" "_")
                                   "clojure.main")
-                                "\n")))]
+                                "\n"))
+                         (manifest-properties options))]
     (with-open [is (io/input-stream (.getBytes manifest))]
       (when *verbose*
         (println "\nGenerating META-INF/MANIFEST.MF:\n")
@@ -567,6 +589,7 @@
   (println "  :jar sym-or-str    -- specify the name of the JAR file")
   (println "  :jvm-opts [strs]   -- optional list of JVM options for AOT compilation")
   (println "  :main-class sym    -- specify the main namespace (or class)")
+  (println "  :manifest {kvs}    -- optional hash map of additional entries for MANIFEST.MF")
   (println "  :no-pom true       -- ignore pom.xml")
   (println "  :pom-file str      -- optional path to a different 'pom.xml' file")
   (println "  :repro false       -- include user 'deps.edn' when computing the classpath")
