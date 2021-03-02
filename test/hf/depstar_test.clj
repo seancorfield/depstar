@@ -154,11 +154,13 @@
            (sut/build-jar {:jar-type :uber :jar (str jar)
                            :pom-file (str (File/createTempFile "pom" ".xml"))
                            :group-id "depstar.issue" :artifact-id "feature" :version "22"
+                           :manifest {:another-property "Added via :manifest"}
                            :aliases [:test-issue-22]})))
     (let [contents (read-jar jar)]
       ;; check this triggered MR JAR flags:
       (is (deref #'sut/multi-release?))
-      (is (= "true" (get-in contents [:manifest "Multi-Release"]))))))
+      (is (= "true" (get-in contents [:manifest "Multi-Release"])))
+      (is (= "Added via :manifest" (get-in contents [:manifest "Another-Property"]))))))
 
 (defn print-err
   "Only standard error is printed from the compilation
