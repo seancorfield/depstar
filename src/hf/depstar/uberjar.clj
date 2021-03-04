@@ -302,17 +302,22 @@
   [src dest options]
   (copy-source* src dest options))
 
+(defn- read-edn-files
+  "Given as options map, use tools.deps.alpha to read and merge the
+  applicable `deps.edn` files."
+  [{:keys [repro] :or {repro true}}]
+  (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)]
+    (t/merge-edns (if repro
+                    [root-edn project-edn]
+                    [root-edn user-edn project-edn]))))
+
 (defn- calc-project-basis
   "Given the options map, use tools.deps.alpha to read and merge the
   applicable `deps.edn` files, combine the specified aliases, calculate
   the project basis (which will resolve/download dependencies), and
   return the calculated project basis."
-  [{:keys [aliases repro]
-    :or {aliases [] repro true}}]
-  (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)
-        deps     (t/merge-edns (if repro
-                                 [root-edn project-edn]
-                                 [root-edn user-edn project-edn]))
+  [{:keys [aliases] :or {aliases []} :as options}]
+  (let [deps     (read-edn-files options)
         combined (t/combine-aliases deps aliases)]
     ;; this could be cleaner, by only selecting the "relevant"
     ;; keys from combined for each of these three uses (but
@@ -597,6 +602,21 @@
   (println "  :verbose true      -- explain what goes into the JAR file")
   (println "  :version str       -- specify the version (of the group/artifact)"))
 
+(defn- preprocess-options
+  "Given an options hash map, if any of the values are keywords, look them
+  up as alias values from the full basis (including user `deps.edn`).
+
+  :jar-type is the only option that is expected to have a keyword value
+  and it is generally set automatically so we skip the lookup for that."
+  [options]
+  (let [aliases (:aliases (read-edn-files {:repro false}))]
+    (reduce-kv (fn [opts k v]
+                 (if (and (not= :jar-type k) (keyword? v))
+                   (assoc opts k (get aliases v v))
+                   opts))
+               options
+               options)))
+
 (defn build-jar
   "Core functionality for depstar. Can be called from a REPL or as a library.
 
@@ -609,11 +629,7 @@
     * `:copy-failure` -- one or more files could not be copied into the JAR
 
   Additional detail about success and failure is also logged."
-  [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
-           group-id help jar jar-type jvm-opts main-class no-pom pom-file
-           sync-pom verbose]
-    :or {jar-type :uber}
-    :as options}]
+  [{:keys [help jar] :as options}]
 
   (cond
 
@@ -624,7 +640,12 @@
     {:success false :reason :no-jar}
 
     :else
-    (let [jar        (some-> jar str) ; ensure we have a string
+    (let [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
+                  group-id jar jar-type jvm-opts main-class no-pom pom-file
+                  sync-pom verbose]
+           :or {jar-type :uber}}
+          (preprocess-options options)
+          jar        (some-> jar str) ; ensure we have a string
           _          (when (and jvm-opts (not (sequential? jvm-opts)))
                        (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
           _          (when (and group-id (not (re-find #"\." (str group-id))))

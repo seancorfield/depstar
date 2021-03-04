@@ -196,7 +196,8 @@
            (reset! res
                    (sut/build-jar {:jar-type :uber :jar (str jar)
                                    :aot true :main-class 'issue-64
-                                   :jvm-opts ["-Dclojure.compiler.direct-linking=true"]
+                                   ;; this tests lookup via alias
+                                   :jvm-opts :direct-linking
                                    :pom-file (str (File/createTempFile "pom" ".xml"))
                                    :group-id "depstar.issue" :artifact-id "bug" :version "64"
                                    :aliases [:test-issue-64]})))))
@@ -207,7 +208,6 @@
                 (reset! res
                         (sut/build-jar {:jar-type :uber :jar (str jar)
                                         :aot true :main-class 'issue-64
-                                        ;:jvm-opts ["-Dclojure.compiler.direct-linking=true"]
                                         :pom-file (str (File/createTempFile "pom" ".xml"))
                                         :group-id "depstar.issue" :artifact-id "bug" :version "64"
                                         :aliases [:test-issue-64]}))))))

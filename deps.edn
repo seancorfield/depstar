@@ -27,6 +27,7 @@
            {:replace-deps {javax.xml.bind/jaxb-api {:mvn/version "2.3.0"}}}
            :test-issue-64
            {:extra-paths ["test-64"]}
+           :direct-linking ["-Dclojure.compiler.direct-linking=true"]
            :test-issue-65
            {:extra-paths ["test-65"]}
            :test-issue-66

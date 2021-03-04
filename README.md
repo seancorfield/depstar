@@ -278,6 +278,21 @@ clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
 
 For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
 
+As of 2.0.next, `depstar` allows the value of any exec argument to be a keyword
+which is then looked up as an alias in the full project basis (including your
+user `deps.edn` file). For example:
+
+```clojure
+  ;; using an alias as a value for :jvm-opts:
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+            :exec-fn hf.depstar/uberjar
+            :exec-args {:jar "MyProject.jar"
+                        :aot true
+                        :jvm-opts :direct-linking
+                        :main-class project.core}}
+  :direct-linking ["-Dclojure.compiler.direct-linking=true"]
+```
+
 ## Debugging `depstar` Behavior
 
 If you are seeing unexpected results with `depstar` and the `:verbose true` option doesn't provide enough information, you can enable "debug mode" with either `DEPSTAR_DEBUG=true` as an environment variable or `depstar.debug=true` as a JVM property. Be warned: this is **very verbose**!
