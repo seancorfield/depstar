@@ -284,7 +284,11 @@ user `deps.edn` file). For example:
 
 ```clojure
   ;; using an alias as a value for :jvm-opts:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+  :uberjar
+  {:replace-deps
+   {com.github.seancorfield/depstar ; 2.0.next:
+    {:git/url "https://github.com/seancorfield/depstar"
+     :sha "a8cf78c9e09e3504e64fc77bcb133a7ada39a68f"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
