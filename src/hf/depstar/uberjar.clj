@@ -631,7 +631,7 @@
   Additional detail about success and failure is also logged."
   [{:keys [help jar] :as options}]
 
-  (cond
+    (cond
 
     help
     {:success false :reason :help}
@@ -643,7 +643,8 @@
     (let [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
                   group-id jar jar-type jvm-opts main-class no-pom pom-file
                   sync-pom verbose]
-           :or {jar-type :uber}}
+           :or {jar-type :uber}
+           :as options}
           (preprocess-options options)
           jar        (some-> jar str) ; ensure we have a string
           _          (when (and jvm-opts (not (sequential? jvm-opts)))
