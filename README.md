@@ -288,7 +288,7 @@ user `deps.edn` file). For example:
   {:replace-deps
    {com.github.seancorfield/depstar ; 2.0.next:
     {:git/url "https://github.com/seancorfield/depstar"
-     :sha "a8cf78c9e09e3504e64fc77bcb133a7ada39a68f"}}
+     :sha "ee2badaaf4b26754f903ed92e77fd4e82cf2ed70"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
