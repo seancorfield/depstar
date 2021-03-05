@@ -612,7 +612,11 @@
   (let [aliases (:aliases (read-edn-files {:repro false}))]
     (reduce-kv (fn [opts k v]
                  (if (and (not= :jar-type k) (keyword? v))
-                   (assoc opts k (get aliases v v))
+                   (if (contains? aliases v)
+                     (assoc opts k (get aliases v))
+                     (do
+                       (logger/warn k "has value" v "which is an unknown alias")
+                       opts))
                    opts))
                options
                options)))
