@@ -14,17 +14,28 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 
 ```clj
 {
-  :aliases {:depstar
-              {:replace-deps
-                 {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
-               :ns-default hf.depstar
-               :exec-args {}}}
+ :aliases {
+  ;; build an uberjar (application) with AOT compilation by default:
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+            :exec-fn hf.depstar/uberjar
+            :exec-args {:aot true}}
+  ;; build a jar (library):
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+        :exec-fn hf.depstar/jar
+        :exec-args {}}
+  ;; generic depstar alias, use with jar or uberjar function name:
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+            :ns-default hf.depstar
+            :exec-args {}}
+ }
 }
 ```
 
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
+clojure -X:jar :jar MyLib.jar
+# or:
 clojure -X:depstar jar :jar MyLib.jar
 ```
 
@@ -34,6 +45,8 @@ For deployment to Clojars, please read the [Clojars Verified Group Names policy]
 Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
+clojure -X:uberjar :jar MyProject.jar
+# or:
 clojure -X:depstar uberjar :jar MyProject.jar
 ```
 
@@ -77,12 +90,13 @@ pushed, I perform one last commit with the following updates:
 > Note: all my libraries have `:jar` and `:deploy` as aliases in their `deps.edn` files which supply appropriate default values for the `:exec-args`. For example, from `clj-new`:
 
 ```clj
-           :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
-                 :exec-fn hf.depstar/jar
-                 :exec-args {:jar "clj-new.jar" :sync-pom true}}
-           :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
-                    :exec-fn deps-deploy.deps-deploy/deploy
-                    :exec-args {:installer :remote :artifact "clj-new.jar"}}
+    ;; override the example :jar alias with a specific one:
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+          :exec-fn hf.depstar/jar
+          :exec-args {:jar "clj-new.jar" :sync-pom true}}
+    :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+            :exec-fn deps-deploy.deps-deploy/deploy
+            :exec-args {:installer :remote :artifact "clj-new.jar"}}
 ```
 
 > I use a generic name for the JAR file so it doesn't need to be updated: both `depstar` and `deps-deploy` use the `<groupId>`, `<artifactId>`, and `<version>` information from `pom.xml` to ascertain the correct coordinates and version to use. If your project was created initially by `clj-new`, it should also have `:jar` and `:deploy` aliases in the `deps.edn` file that was generated.
@@ -109,12 +123,16 @@ For example, you can add web assets into an uberjar by including an alias in you
 Then invoke `depstar` with the chosen aliases:
 
 ```bash
+clojure -X:uberjar :jar MyProject.jar :aliases '[:webassets]'
+# or:
 clojure -X:depstar uberjar :jar MyProject.jar :aliases '[:webassets]'
 ```
 
 You can also pass an explicit classpath into `depstar` and it will use that instead of the computed classpath for building the JAR:
 
 ```bash
+clojure -X:uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
+# or:
 clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
 ```
 
@@ -129,14 +147,14 @@ If you are building an uberjar, the manifest (`META-INF/MANIFEST.MF`) will decla
 If you build an uberjar without `:main-class` (as in the `pom.xml` examples below), you can run the resulting file as follows:
 
 ```bash
-clojure -X:depstar uberjar :jar MyProject.jar
+clojure -X:uberjar :jar MyProject.jar
 java -jar MyProject.jar -m project.core
 ```
 
 If you build an uberjar with `:main-class` (and AOT compilation), you can run the resulting file as follows:
 
 ```bash
-clojure -X:depstar uberjar :aot true :jar MyProject.jar :main-class project.core
+clojure -X:uberjar :aot true :jar MyProject.jar :main-class project.core
 java -jar MyProject.jar
 ```
 
@@ -145,7 +163,7 @@ java -jar MyProject.jar
 You can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols or regular expressions to match namespaces. It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
 
 ```bash
-clojure -X:depstar jar :jar MyProject.jar :compile-ns '[project.core]'
+clojure -X:jar :jar MyProject.jar :compile-ns '[project.core]'
 ```
 
 If you are building an uberjar, you can specify `:main-class` to identify the namespace that contains a `-main` function (and a `(:gen-class)` entry in the `ns` form) and then specify `:aot true` and `depstar` will default `:compile-ns` to a vector containing just that main namespace symbol.
@@ -154,7 +172,7 @@ The `:main-class` option also specifies the name of the class that is identified
 
 ```bash
 # build the uberjar with AOT compilation
-clojure -X:depstar uberjar :jar MyProject.jar :aot true :main-class project.core
+clojure -X:uberjar :jar MyProject.jar :aot true :main-class project.core
 # Main-Class: project.core
 java -jar MyProject.jar
 ```
@@ -169,7 +187,7 @@ The `:jvm-opts` exec argument lets you pass a vector of strings into that subpro
 provide JVM options that will apply during compilation, such as enabling direct linking:
 
 ```bash
-clojure -X:depstar uberjar :jar MyProject.jar \
+clojure -X:uberjar :jar MyProject.jar \
     :aot true :main-class project.core \
     :jvm-opts '["-Dclojure.compiler.direct-linking=true"]'
 ```
@@ -197,11 +215,11 @@ If you build an uberjar with a `pom.xml` file present and do not specify `:no-po
 ```bash
 # if pom.xml file is already present:
 # build the uberjar without AOT compilation
-clojure -X:depstar uberjar :jar MyProject.jar
+clojure -X:uberjar :jar MyProject.jar
 
 # else ask depstar to create it for you:
 # build the uberjar without AOT compilation
-clojure -X:depstar uberjar :sync-pom true \
+clojure -X:uberjar :sync-pom true \
         :group-id myname :artifact-id myproject \
         :version '"1.2.3"' :jar MyProject.jar
 
