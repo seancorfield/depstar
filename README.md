@@ -31,17 +31,6 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 }
 ```
 
-Create a (library) jar by invoking `depstar` with the desired jar name:
-
-```bash
-clojure -X:jar :jar MyLib.jar
-# or:
-clojure -X:depstar jar :jar MyLib.jar
-```
-
-If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
-For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
-
 Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
@@ -57,6 +46,19 @@ java -cp MyProject.jar clojure.main -m project.core
 ```
 
 If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the sections below for more information about both of those.
+
+Create a (library) jar by invoking `depstar` with the desired jar name:
+
+```bash
+clojure -X:jar :jar MyLib.jar
+# or:
+clojure -X:depstar jar :jar MyLib.jar
+```
+
+> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can use the `:exclude` option to omit such code from your JAR.
+
+If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
+For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
 
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
 
