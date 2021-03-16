@@ -194,6 +194,13 @@ clojure -X:uberjar :jar MyProject.jar \
     :jvm-opts '["-Dclojure.compiler.direct-linking=true"]'
 ```
 
+That is equivalent to the following `:exec-args`:
+
+```clojure
+  :exec-args {:aot true :main-class project.core
+              :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
+```
+
 ## `pom.xml`
 
 If you are creating a library and intend to deploy it to Clojars or a similar repository, you will need a `pom.xml` file.
