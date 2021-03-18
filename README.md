@@ -16,15 +16,15 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 {
  :aliases {
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
   ;; generic depstar alias, use with jar or uberjar function name:
-  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
             :ns-default hf.depstar
             :exec-args {}}
  }
@@ -55,7 +55,7 @@ clojure -X:jar :jar MyLib.jar
 clojure -X:depstar jar :jar MyLib.jar
 ```
 
-> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.next) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.
+> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.206) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
 For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
@@ -93,7 +93,7 @@ pushed, I perform one last commit with the following updates:
 
 ```clj
     ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
           :exec-fn hf.depstar/jar
           :exec-args {:jar "clj-new.jar" :sync-pom true}}
     :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
@@ -142,7 +142,7 @@ clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyPr
 
 When building a library JAR (not an uberjar), ou can tell `depstar` to use only the `:paths` and
 `:extra-paths` from the project basis instead of the classpath by using the `:paths-only true`
-option (new in 2.0.next). This can be useful when you have `:local/root` and/or `:git/url`
+option (new in 2.0.206). This can be useful when you have `:local/root` and/or `:git/url`
 dependencies and you don't want them considered.
 
 ## `:main-class`
@@ -289,7 +289,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.193"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -310,7 +310,7 @@ clojure -X:uberjar :jar '"/tmp/MyTempProject.jar"'
 
 For convenience, you can specify the JAR file as a Clojure symbol (e.g., `MyProject.jar` above) if it could legally be one and `depstar` will convert it to a string for you. Per the CLI docs, you would normally specify string arguments as `"..."` values, that need to be wrapped in `'...'` because of shell syntax (so the quoted string is passed correctly into `clojure`).
 
-As of 2.0.next, `depstar` allows the value of any exec argument to be a keyword
+As of 2.0.206, `depstar` allows the value of any exec argument to be a keyword
 which is then looked up as an alias in the full project basis (including your
 user `deps.edn` file). For example:
 
@@ -318,9 +318,7 @@ user `deps.edn` file). For example:
   ;; using an alias as a value for :jvm-opts:
   :uberjar
   {:replace-deps
-   {com.github.seancorfield/depstar ; 2.0.next:
-    {:git/url "https://github.com/seancorfield/depstar"
-     :sha "ee2badaaf4b26754f903ed92e77fd4e82cf2ed70"}}
+   {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -390,7 +388,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 2.0.193
+Latest stable release: 2.0.206
 
 # License
 
