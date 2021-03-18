@@ -596,6 +596,7 @@
   (println "  :main-class sym    -- specify the main namespace (or class)")
   (println "  :manifest {kvs}    -- optional hash map of additional entries for MANIFEST.MF")
   (println "  :no-pom true       -- ignore pom.xml")
+  (println "  :paths-only true   -- use only paths from the basis, not the classpath")
   (println "  :pom-file str      -- optional path to a different 'pom.xml' file")
   (println "  :repro false       -- include user 'deps.edn' when computing the classpath")
   (println "  :sync-pom true     -- synchronize 'pom.xml' dependencies, group, artifact, and version")
@@ -645,12 +646,14 @@
 
     :else
     (let [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
-                  group-id jar jar-type jvm-opts main-class no-pom pom-file
-                  sync-pom verbose]
+                  group-id jar jar-type jvm-opts main-class no-pom paths-only
+                  pom-file sync-pom verbose]
            :or {jar-type :uber}
            :as options}
           (preprocess-options options)
           jar        (some-> jar str) ; ensure we have a string
+          _          (when (and (not= :thin jar-type) paths-only)
+                       (logger/warn ":paths-only is ignored when building an uberjar"))
           _          (when (and jvm-opts (not (sequential? jvm-opts)))
                        (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
           _          (when (and group-id (not (re-find #"\." (str group-id))))
@@ -672,7 +675,10 @@
             (logger/warn ":aot is not recommended for a 'thin' JAR!"))
 
           cp          (or (some-> classpath (parse-classpath))
-                          (:classpath-roots basis))
+                          (if (and paths-only (= :thin jar-type))
+                            (vec (into (set (:paths basis))
+                                       (-> basis :classpath-args :extra-paths)))
+                            (:classpath-roots basis)))
 
           ;; expand :all and regex string using tools.namespace:
           dir-file-ns (comp

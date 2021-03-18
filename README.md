@@ -55,7 +55,7 @@ clojure -X:jar :jar MyLib.jar
 clojure -X:depstar jar :jar MyLib.jar
 ```
 
-> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can use the `:exclude` option to omit such code from your JAR.
+> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.next) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath).
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
 For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
@@ -105,7 +105,7 @@ pushed, I perform one last commit with the following updates:
 
 ## Classpath
 
-`depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:
+By default, `depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:
 
 * For each directory on the classpath, the contents of that directory are copied (recursively) to the output JAR as individual files.
 * If `:jar-type :thin` (via the `hf.depstar/jar` exec-fn), JAR files on the classpath are ignored, otherwise (`:jar-type :uber`, via the `hf.depstar/uberjar` exec-fn), each JAR file on the classpath is expanded and its contents are copied to the output JAR as individual files.
@@ -139,6 +139,11 @@ clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyPr
 ```
 
 > Note: the `-Sdeps` argument to `clojure` only affects how the initial classpath is computed to run a program -- it cannot affect the classpath `depstar` itself computes from the `deps.edn` files. If you need to use `-Sdeps`, for example to specify alternate repos for dependencies, use the `:classpath` approach shown above.
+
+When building a library JAR (not an uberjar), ou can tell `depstar` to use only the `:paths` and
+`:extra-paths` from the project basis instead of the classpath by using the `:paths-only true`
+option (new in 2.0.next). This can be useful when you have `:local/root` and/or `:git/url`
+dependencies and you don't want them considered.
 
 ## `:main-class`
 

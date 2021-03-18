@@ -1,6 +1,7 @@
 # Changes
 
 * 2.0.next in progress
+  * Address #73 by updating the documentation and adding a new `:paths-only` option (default `false`).
   * Fix #71 by allowing keyword-valued exec args to be looked up as aliases in the full basis (including user `deps.edn`).
 
 * 2.0.193 -- 2021-03-02
