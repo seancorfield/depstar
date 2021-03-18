@@ -55,7 +55,7 @@ clojure -X:jar :jar MyLib.jar
 clojure -X:depstar jar :jar MyLib.jar
 ```
 
-> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.next) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath).
+> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.next) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.
 
 If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
 For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
