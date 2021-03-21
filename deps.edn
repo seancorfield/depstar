@@ -1,9 +1,9 @@
 {:paths ["src"]
- :deps {org.clojure/clojure {:mvn/version "1.10.2"}
-        org.clojure/tools.deps.alpha {:mvn/version "0.9.863"}
+ :deps {org.clojure/clojure {:mvn/version "1.10.3"}
+        org.clojure/tools.deps.alpha {:mvn/version "0.11.905"}
         org.clojure/tools.logging {:mvn/version "1.1.0"}
         org.clojure/tools.namespace {:mvn/version "1.1.0"}
-        org.apache.logging.log4j/log4j-core {:mvn/version "2.14.0"}
+        org.apache.logging.log4j/log4j-core {:mvn/version "2.14.1"}
         org.slf4j/slf4j-simple {:mvn/version "1.7.30"}}
  :aliases {:test {:extra-paths ["test"]}
            :runner
@@ -19,7 +19,7 @@
                     :exec-args {:installer :remote :artifact "depstar.jar"}}
            ;; the following aliases are all tests for particular issues:
            :test-issue-5
-           {:replace-deps {clj-time/clj-time  {:mvn/version "0.15.0"}
+           {:replace-deps {clj-time/clj-time  {:mvn/version "0.15.2"}
                            java-time-literals {:mvn/version "2018-04-06"}}}
            :test-issue-7
            {:replace-deps {javax.xml.bind/jaxb-api {:mvn/version "2.3.0"}}}
