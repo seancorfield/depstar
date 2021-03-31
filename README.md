@@ -113,7 +113,7 @@ By default, `depstar` computes a classpath from the system and project `deps.edn
 
 By default, only the system and project `deps.edn` files are used (as if the `:repro true` option is provided). _This is intended to correspond to the CLI's `-Srepro` option that ignores the user `deps.edn` file._ If the `:repro false` option is provided instead, the user `deps.edn` file is also used.
 
-If you need to adjust the computed classpath, based on aliases, you can supply a vector of aliases to the `:aliases` exec argument of `depstar`.
+If you need to adjust the computed classpath, based on aliases, you can supply a vector of aliases to the `:aliases` exec argument of `depstar`. This classpath is used for both the AOT compilation process and for the JAR building.
 
 For example, you can add web assets into an uberjar by including an alias in your project `deps.edn`:
 
@@ -190,6 +190,11 @@ Remember that AOT compilation is transitive so, in addition to your `project.cor
 
 AOT compilation is performed in a subprocess so the JVM options in effect when you
 run `depstar` do not affect the actual compilation of the code going into the JAR file.
+By default, the compilation process uses the same classpath computed as described above,
+using `:aliases` if provided. Sometimes, you might need the classpath for compilation to
+be slightly different than the classpath used for building the JAR: in that case you can
+use `:compile-aliases` to specify aliases that are used to compute a classpath just for
+AOT compilation, and then the JAR is built using the regular classpath (above).
 The `:jvm-opts` exec argument lets you pass a vector of strings into that subprocess to
 provide JVM options that will apply during compilation, such as enabling direct linking:
 
@@ -268,6 +273,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
 * `:artifact-id` -- if specified, the symbol used for the `artifactId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
+* `:compile-aliases` -- if specified, a vector of aliases to use while computing the classpath roots to use for AOT compilation; otherwise the same classpath is used for both AOT compilation as for JAR building
 * `:compile-fn` -- if specified, this function is used instead of `clojure.core/compile`: this is intended to support scenarios where some additional code needs to be run around AOT compilation (such as when working with cljfx)
 * `:compile-ns` -- if specified, a vector of symbols and regexes to match namespaces to compile, and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
