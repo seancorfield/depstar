@@ -610,9 +610,10 @@
   :jar-type is the only option that is expected to have a keyword value
   and it is generally set automatically so we skip the lookup for that."
   [options]
-  (let [aliases (:aliases (read-edn-files {:repro false}))]
+  (let [kw-opts #{:compile-ns :jar-type} ; :compile-ns can be :all
+        aliases (:aliases (read-edn-files {:repro false}))]
     (reduce-kv (fn [opts k v]
-                 (if (and (not= :jar-type k) (keyword? v))
+                 (if (and (not (contains? kw-opts k)) (keyword? v))
                    (if (contains? aliases v)
                      (assoc opts k (get aliases v))
                      (do
@@ -679,6 +680,11 @@
 
          cp          (or (some-> classpath (parse-classpath))
                          (if (and paths-only (= :thin jar-type))
+                           (vec (into (set (:paths basis))
+                                      (-> basis :classpath-args :extra-paths)))
+                           (:classpath-roots basis)))
+         c-cp        (or (some-> classpath (parse-classpath))
+                         (if (and paths-only (= :thin jar-type))
                            (vec (into (set (:paths c-basis))
                                       (-> c-basis :classpath-args :extra-paths)))
                            (:classpath-roots c-basis)))
@@ -689,7 +695,7 @@
                       (map io/file)
                       (mapcat tnsf/find-namespaces-in-dir))
          compile-ns (cond (= :all compile-ns)
-                          (into [] dir-file-ns cp)
+                          (into [] dir-file-ns c-cp)
                           (sequential? compile-ns)
                           (let [patterns (into []
                                                (comp (filter string?)
@@ -700,7 +706,7 @@
                               (into (comp
                                      dir-file-ns
                                      (filter #(included? (str %) patterns)))
-                                    cp)))
+                                    c-cp)))
                           :else
                           (when compile-ns
                             (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
@@ -712,8 +718,9 @@
          tmp-c-dir   (when do-aot
                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
          cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
+         c-cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) c-cp)
          aot-failure (when do-aot
-                       (some #(compile-it % jvm-opts cp compile-fn tmp-c-dir)
+                       (some #(compile-it % jvm-opts c-cp compile-fn tmp-c-dir)
                              compile-ns))]
 
      (if aot-failure

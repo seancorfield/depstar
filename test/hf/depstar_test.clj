@@ -244,3 +244,24 @@
                            :pom-file (str (File/createTempFile "pom" ".xml"))
                            :group-id "depstar.issue" :artifact-id "bug" :version "66"
                            :aliases [:test-issue-66]})))))
+
+(deftest issue-75
+  (println "[#75/COMPILE-ALIASES]")
+  (let [jar (File/createTempFile "test" ".jar")
+        res (atom nil)]
+    (is (re-find
+         #"print-err: please.print.me!"
+         (with-out-str
+           (reset! res
+                   (sut/build-jar {:jar-type :uber :jar (str jar)
+                                   :aot true :main-class 'please.print.me!
+                                   :compile-fn 'hf.depstar-test/print-err
+                                   ;; without :compile-aliases this test would fail:
+                                   :aliases [:test-issue-66] :compile-aliases [:test]
+                                   :pom-file (str (File/createTempFile "pom" ".xml"))
+                                   :group-id "depstar.issue" :artifact-id "bug" :version "75"})))))
+    (is (= {:success true} @res))
+    ;; make sure :aliases actually got included:
+    (let [contents (read-jar jar #".*lang[-_]utils.*")]
+      (is (<= 6 (count (:files contents))))
+      (is (some #(re-find #"org.danielsz/lang-utils" %) (:entries contents))))))
