@@ -1,6 +1,6 @@
 # Changes
 
-* 2.0.next in progress
+* 2.0.211 -- 2021-03-31
   * Fix #75 by adding `:compile-aliases` so the classpath for AOT compilation can be adjusted separately from the classpath for JAR building (controlled by `:aliases`).
   * Update several dependency versions.
 

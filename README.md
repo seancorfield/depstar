@@ -16,15 +16,15 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 {
  :aliases {
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
   ;; generic depstar alias, use with jar or uberjar function name:
-  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
             :ns-default hf.depstar
             :exec-args {}}
  }
@@ -93,7 +93,7 @@ pushed, I perform one last commit with the following updates:
 
 ```clj
     ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
           :exec-fn hf.depstar/jar
           :exec-args {:jar "clj-new.jar" :sync-pom true}}
     :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
@@ -193,7 +193,7 @@ run `depstar` do not affect the actual compilation of the code going into the JA
 By default, the compilation process uses the same classpath computed as described above,
 using `:aliases` if provided. Sometimes, you might need the classpath for compilation to
 be slightly different than the classpath used for building the JAR: in that case you can
-use `:compile-aliases` to specify aliases that are used to compute a classpath just for
+use `:compile-aliases` (new in 2.0.211) to specify aliases that are used to compute a classpath just for
 AOT compilation, and then the JAR is built using the regular classpath (above).
 The `:jvm-opts` exec argument lets you pass a vector of strings into that subprocess to
 provide JVM options that will apply during compilation, such as enabling direct linking:
@@ -273,7 +273,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:aot` -- if `true`, perform AOT compilation (like the legacy `-C` / `--compile` option)
 * `:artifact-id` -- if specified, the symbol used for the `artifactId` field in `pom.xml` and `pom.properties` when building the JAR file; **your `pom.xml` file will be updated to match!**
 * `:classpath` -- if specified, use this classpath instead of the (current) runtime classpath to build the JAR (like the legacy `-P` / `--classpath` option)
-* `:compile-aliases` -- if specified, a vector of aliases to use while computing the classpath roots to use for AOT compilation; otherwise the same classpath is used for both AOT compilation as for JAR building
+* `:compile-aliases` -- if specified, a vector of aliases to use while computing the classpath roots to use for AOT compilation; otherwise the same classpath is used for both AOT compilation as for JAR building; new in 2.0.211
 * `:compile-fn` -- if specified, this function is used instead of `clojure.core/compile`: this is intended to support scenarios where some additional code needs to be run around AOT compilation (such as when working with cljfx)
 * `:compile-ns` -- if specified, a vector of symbols and regexes to match namespaces to compile, and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
@@ -285,6 +285,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:main-class` -- the name of the main class for an uberjar (can be specified as a Clojure symbol or a quoted string; like the legacy `-m` / `--main` option; used as the main namespace to compile if `:aot` is `true`)
 * `:manifest` -- an optional hash map of additional properties to add to `MANIFEST.MF`, e.g., `:manifest {:class-path "/path/to/some.jar"}` will add the line `Class-Path: /path/to/some.jar` that file
 * `:no-pom` -- if `true`, ignore the `pom.xml` file (like the legacy `-n` / `--no-pom` option)
+* `:paths-only` -- if `true`, only use `:paths` and `:extra-paths` from the project basis (and do not treat `:local/root` and `:git/url` as providing source dependencies); new in 2.0.206
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
 * `:sync-pom` -- if `true`, will run the equivalent of `clojure -Spom` to create or update your `pom.xml` file prior to building the JAR file
@@ -295,7 +296,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -324,7 +325,7 @@ user `deps.edn` file). For example:
   ;; using an alias as a value for :jvm-opts:
   :uberjar
   {:replace-deps
-   {com.github.seancorfield/depstar {:mvn/version "2.0.206"}}
+   {com.github.seancorfield/depstar {:mvn/version "2.0.211"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -394,7 +395,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 2.0.206
+Latest stable release: 2.0.211
 
 # License
 
