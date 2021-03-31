@@ -636,117 +636,120 @@
   Additional detail about success and failure is also logged."
   [{:keys [help jar] :as options}]
 
-    (cond
+  (cond
 
-    help
-    {:success false :reason :help}
+   help
+   {:success false :reason :help}
 
-    (not jar)
-    {:success false :reason :no-jar}
+   (not jar)
+   {:success false :reason :no-jar}
 
-    :else
-    (let [{:keys [aot classpath compile-fn compile-ns debug-clash exclude
-                  group-id jar jar-type jvm-opts main-class no-pom paths-only
-                  pom-file sync-pom verbose]
-           :or {jar-type :uber}
-           :as options}
-          (preprocess-options options)
-          jar        (some-> jar str) ; ensure we have a string
-          _          (when (and (not= :thin jar-type) paths-only)
-                       (logger/warn ":paths-only is ignored when building an uberjar"))
-          _          (when (and jvm-opts (not (sequential? jvm-opts)))
-                       (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
-          _          (when (and group-id (not (re-find #"\." (str group-id))))
-                       (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
-          jvm-opts   (if (sequential? jvm-opts) (vec jvm-opts) [])
-          main-class (some-> main-class str) ; ensure we have a string
-          options    (assoc options ; ensure defaulted/processed options present
-                            :jar        jar
-                            :jar-type   jar-type
-                            :main-class main-class)
-          basis      (calc-project-basis options)
-          ^File
-          pom-file   (io/file (or pom-file "pom.xml"))
-          _
-          (when sync-pom
-            (pom-sync pom-file basis options))
-          _
-          (when (and aot (= :thin jar-type))
-            (logger/warn ":aot is not recommended for a 'thin' JAR!"))
+   :else
+   (let [{:keys [aot classpath compile-aliases compile-fn compile-ns debug-clash exclude
+                 group-id jar jar-type jvm-opts main-class no-pom paths-only
+                 pom-file sync-pom verbose]
+          :or {jar-type :uber}
+          :as options}
+         (preprocess-options options)
+         jar        (some-> jar str) ; ensure we have a string
+         _          (when (and (not= :thin jar-type) paths-only)
+                      (logger/warn ":paths-only is ignored when building an uberjar"))
+         _          (when (and jvm-opts (not (sequential? jvm-opts)))
+                      (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
+         _          (when (and group-id (not (re-find #"\." (str group-id))))
+                      (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
+         jvm-opts   (if (sequential? jvm-opts) (vec jvm-opts) [])
+         main-class (some-> main-class str) ; ensure we have a string
+         options    (assoc options ; ensure defaulted/processed options present
+                           :jar        jar
+                           :jar-type   jar-type
+                           :main-class main-class)
+         basis      (calc-project-basis options)
+         c-basis    (if-let [c-aliases (not-empty compile-aliases)]
+                      (calc-project-basis (assoc options :aliases c-aliases))
+                      basis)
+         ^File
+         pom-file   (io/file (or pom-file "pom.xml"))
+         _
+         (when sync-pom
+           (pom-sync pom-file basis options))
+         _
+         (when (and aot (= :thin jar-type))
+           (logger/warn ":aot is not recommended for a 'thin' JAR!"))
 
-          cp          (or (some-> classpath (parse-classpath))
-                          (if (and paths-only (= :thin jar-type))
-                            (vec (into (set (:paths basis))
-                                       (-> basis :classpath-args :extra-paths)))
-                            (:classpath-roots basis)))
+         cp          (or (some-> classpath (parse-classpath))
+                         (if (and paths-only (= :thin jar-type))
+                           (vec (into (set (:paths c-basis))
+                                      (-> c-basis :classpath-args :extra-paths)))
+                           (:classpath-roots c-basis)))
 
           ;; expand :all and regex string using tools.namespace:
-          dir-file-ns (comp
-                       (filter #(= :directory (classify %)))
-                       (map io/file)
-                       (mapcat tnsf/find-namespaces-in-dir))
-          compile-ns (cond (= :all compile-ns)
-                           (into [] dir-file-ns cp)
-                           (sequential? compile-ns)
-                           (let [patterns (into []
-                                                (comp (filter string?)
-                                                      (map re-pattern))
-                                                compile-ns)]
-                             (cond-> (filterv symbol? compile-ns)
-                               (seq patterns)
-                               (into (comp
-                                      dir-file-ns
-                                      (filter #(included? (str %) patterns)))
-                                     cp)))
-                           :else
-                           (when compile-ns
-                             (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
+         dir-file-ns (comp
+                      (filter #(= :directory (classify %)))
+                      (map io/file)
+                      (mapcat tnsf/find-namespaces-in-dir))
+         compile-ns (cond (= :all compile-ns)
+                          (into [] dir-file-ns cp)
+                          (sequential? compile-ns)
+                          (let [patterns (into []
+                                               (comp (filter string?)
+                                                     (map re-pattern))
+                                               compile-ns)]
+                            (cond-> (filterv symbol? compile-ns)
+                              (seq patterns)
+                              (into (comp
+                                     dir-file-ns
+                                     (filter #(included? (str %) patterns)))
+                                    cp)))
+                          :else
+                          (when compile-ns
+                            (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
 
           ;; force AOT if compile-ns explicitly requested:
-          do-aot      (or aot (seq compile-ns))
+         do-aot      (or aot (seq compile-ns))
           ;; compile main-class at least (if also do-aot):
-          compile-ns  (or (seq compile-ns) [main-class])
-          tmp-c-dir   (when do-aot
-                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
-          cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
-          aot-failure (when do-aot
-                        (some #(compile-it % jvm-opts cp compile-fn tmp-c-dir)
-                              compile-ns))]
+         compile-ns  (or (seq compile-ns) [main-class])
+         tmp-c-dir   (when do-aot
+                       (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
+         cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
+         aot-failure (when do-aot
+                       (some #(compile-it % jvm-opts cp compile-fn tmp-c-dir)
+                             compile-ns))]
 
-      (if aot-failure
+     (if aot-failure
 
-        {:success false :reason :aot-failed}
+       {:success false :reason :aot-failed}
 
-        (let [tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
-              dest-name (str/replace jar #"^.*[/\\]" "")
-              jar-path  (.resolve tmp-z-dir ^String dest-name)
-              jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
-              zip-opts  (doto (java.util.HashMap.)
-                          (.put "create" "true")
-                          (.put "encoding" "UTF-8"))]
+       (let [tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+             dest-name (str/replace jar #"^.*[/\\]" "")
+             jar-path  (.resolve tmp-z-dir ^String dest-name)
+             jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
+             zip-opts  (doto (java.util.HashMap.)
+                         (.put "create" "true")
+                         (.put "encoding" "UTF-8"))]
           ;; copy everything to a temporary ZIP (JAR) file:
-          (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
-            (let [tmp (.getPath zfs "/" (make-array String 0))]
-              (reset! errors 0)
-              (reset! multi-release? false)
-              (logger/info "Building" (name jar-type) "jar:" jar)
-              (binding [*debug* (env-prop "debug")
-                        *exclude* (mapv re-pattern exclude)
-                        *debug-clash* debug-clash
-                        *verbose* verbose]
-                (run! #(copy-source % tmp options) cp)
-                (copy-manifest tmp options)
-                (when (and (not no-pom) (.exists pom-file))
-                  (copy-pom tmp pom-file options)))))
+         (with-open [zfs (FileSystems/newFileSystem jar-file zip-opts)]
+           (let [tmp (.getPath zfs "/" (make-array String 0))]
+             (reset! errors 0)
+             (reset! multi-release? false)
+             (logger/info "Building" (name jar-type) "jar:" jar)
+             (binding [*debug* (env-prop "debug")
+                       *exclude* (mapv re-pattern exclude)
+                       *debug-clash* debug-clash
+                       *verbose* verbose]
+               (run! #(copy-source % tmp options) cp)
+               (copy-manifest tmp options)
+               (when (and (not no-pom) (.exists pom-file))
+                 (copy-pom tmp pom-file options)))))
           ;; move the temporary file to its final location:
-          (let [dest-path (path jar)
-                parent (.getParent dest-path)]
-            (when parent (.. parent toFile mkdirs))
-            (Files/move jar-path dest-path copy-opts))
+         (let [dest-path (path jar)
+               parent (.getParent dest-path)]
+           (when parent (.. parent toFile mkdirs))
+           (Files/move jar-path dest-path copy-opts))
           ;; was it successful?
-          (if (pos? @errors)
-            {:success false :reason :copy-failure}
-            {:success true}))))))
+         (if (pos? @errors)
+           {:success false :reason :copy-failure}
+           {:success true}))))))
 
 (defn ^:no-doc run*
   "Deprecated entry point for REPL or library usage.
