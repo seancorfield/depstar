@@ -1,6 +1,7 @@
 # Changes
 
 * 2.0.next in progress
+  * Address #77 by noting the possible interaction of `user.clj` and `depstar` and suggesting `:replace-paths []`.
   * Fix #76 adjusting AOT selection logic (`:aot true` without `:main-class` gives a warning and does not attempt to compile anything).
 
 * 2.0.211 -- 2021-03-31
