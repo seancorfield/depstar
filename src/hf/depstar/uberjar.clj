@@ -694,27 +694,31 @@
                       (filter #(= :directory (classify %)))
                       (map io/file)
                       (mapcat tnsf/find-namespaces-in-dir))
-         compile-ns (cond (= :all compile-ns)
-                          (into [] dir-file-ns c-cp)
-                          (sequential? compile-ns)
-                          (let [patterns (into []
-                                               (comp (filter string?)
-                                                     (map re-pattern))
-                                               compile-ns)]
-                            (cond-> (filterv symbol? compile-ns)
-                              (seq patterns)
-                              (into (comp
-                                     dir-file-ns
-                                     (filter #(included? (str %) patterns)))
-                                    c-cp)))
-                          :else
-                          (when compile-ns
-                            (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
+         compile-ns  (cond (= :all compile-ns)
+                           (into [] dir-file-ns c-cp)
+                           (sequential? compile-ns)
+                           (let [patterns (into []
+                                                (comp (filter string?)
+                                                      (map re-pattern))
+                                                compile-ns)]
+                             (cond-> (filterv symbol? compile-ns)
+                               (seq patterns)
+                               (into (comp
+                                      dir-file-ns
+                                      (filter #(included? (str %) patterns)))
+                                     c-cp)))
+                           :else
+                           (when compile-ns
+                             (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
 
           ;; force AOT if compile-ns explicitly requested:
          do-aot      (or aot (seq compile-ns))
           ;; compile main-class at least (if also do-aot):
-         compile-ns  (or (seq compile-ns) [main-class])
+         compile-ns  (if (and do-aot main-class)
+                       (into (or compile-ns []) [main-class])
+                       compile-ns)
+         _           (when (and aot (empty? compile-ns))
+                       (logger/warn ":aot true but no namespaces to compile -- ignoring"))
          tmp-c-dir   (when do-aot
                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
          cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)

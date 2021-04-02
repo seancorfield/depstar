@@ -1,5 +1,8 @@
 # Changes
 
+* 2.0.next in progress
+  * Fix #76 adjusting AOT selection logic (`:aot true` without `:main-class` gives a warning and does not attempt to compile anything).
+
 * 2.0.211 -- 2021-03-31
   * Fix #75 by adding `:compile-aliases` so the classpath for AOT compilation can be adjusted separately from the classpath for JAR building (controlled by `:aliases`).
   * Update several dependency versions.
