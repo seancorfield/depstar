@@ -77,7 +77,7 @@ pushed, I perform one last commit with the following updates:
   * For me, that's figured out by running `git rev-list --count HEAD` and adding one to get the COMMITS part of the release I'm about to make, as well as deciding whether MAJOR/MINOR also need an update (generally not).
 * Update the `CHANGELOG.md` file to list the new release version and date and ensure all the changes since the previous release are documented.
 * Update the `README.md` and other documentation to show the new version number everywhere.
-* Run `depstar` with `:sync-pom true :version '"x.y.z"'` to update the `<version>` and SCM `<tag>` in the `pom.xml` file.
+* Build the JAR file, also specifying `:sync-pom true :version '"x.y.z"'` to update the `<version>` and SCM `<tag>` in the `pom.xml` file at the same time.
 * Perform one last full test suite pass!
 * Verify all the diffs, then `git add`, `git commit`, and `git push`.
 * Then I draft a new release on GitHub and use the information in `CHANGELOG.md` in the release notes, and cut the release on GitHub.
