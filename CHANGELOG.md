@@ -1,5 +1,8 @@
 # Changes
 
+* 2.0.next in progress
+  * Address #74 by noting CI environment caching "gotchas".
+
 * 2.0.216 -- 2021-04-14
   * Address #77 by noting the possible interaction of `user.clj` and `depstar` and suggesting `:replace-paths []`.
   * Fix #76 adjusting AOT selection logic (`:aot true` without `:main-class` gives a warning and does not attempt to compile anything).
