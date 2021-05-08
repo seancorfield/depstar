@@ -135,9 +135,9 @@ clojure -X:depstar uberjar :jar MyProject.jar :aliases '[:webassets]'
 You can also pass an explicit classpath into `depstar` and it will use that instead of the computed classpath for building the JAR:
 
 ```bash
-clojure -X:uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
+clojure -X:uberjar :classpath '"'$(clojure -Spath -A:webassets)'"' :jar MyProject.jar
 # or:
-clojure -X:depstar uberjar :classpath "$(clojure -Spath -A:webassets)" :jar MyProject.jar
+clojure -X:depstar uberjar :classpath '"'$(clojure -Spath -A:webassets)'"' :jar MyProject.jar
 ```
 
 > Note: the `-Sdeps` argument to `clojure` only affects how the initial classpath is computed to run a program -- it cannot affect the classpath `depstar` itself computes from the `deps.edn` files. If you need to use `-Sdeps`, for example to specify alternate repos for dependencies, use the `:classpath` approach shown above.
