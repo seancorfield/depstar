@@ -2,6 +2,7 @@
 
 * 2.0.next in progress
   * Address #74 by noting CI environment caching "gotchas".
+  * Update `test-runner`.
 
 * 2.0.216 -- 2021-04-14
   * Address #77 by noting the possible interaction of `user.clj` and `depstar` and suggesting `:replace-paths []`.
