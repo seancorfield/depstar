@@ -1,4 +1,4 @@
-# depstar
+# depstar [![Clojure CI](https://github.com/seancorfield/depstar/actions/workflows/test.yml/badge.svg)](https://github.com/seancorfield/depstar/actions/workflows/test.yml)
 
 <img src="./depstar_logo.png" />
 
