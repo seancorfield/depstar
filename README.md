@@ -64,47 +64,6 @@ For deployment to Clojars, please read the [Clojars Verified Group Names policy]
 
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
 
-## My Deployment Process
-
-My libraries all follow a MAJOR.MINOR.COMMITS pattern for versioning, but this process could apply to
-your preferred versioning scheme as well.
-
-When I'm getting ready to cut a new release, and I have all the enhancements and bug fixes committed and
-pushed, I perform one last commit with the following updates:
-
-* Run `git pull` to ensure I have the latest changes locally.
-* Select a version number for the release
-  * For me, that's figured out by running `git rev-list --count HEAD` and adding one to get the COMMITS part of the release I'm about to make, as well as deciding whether MAJOR/MINOR also need an update (generally not).
-* Update the `CHANGELOG.md` file to list the new release version and date and ensure all the changes since the previous release are documented.
-* Update the `README.md` and other documentation to show the new version number everywhere.
-* Build the JAR file, also specifying `:sync-pom true :version '"x.y.z"'` to update the `<version>` and SCM `<tag>` in the `pom.xml` file at the same time.
-* Perform one last full test suite pass!
-* Verify all the diffs, then `git add`, `git commit`, and `git push`.
-* Then I draft a new release on GitHub and use the information in `CHANGELOG.md` in the release notes, and cut the release on GitHub.
-* Now I `git pull`, check that only a new tag came back.
-* Perform a final full test suite pass (yes, even though I just ran it before the `git push`/`git pull` cycle -- I'm paranoid, okay?).
-* If I'm double-publishing a library (under different group names, as I'm encouraging users to start using the new verified group name for my library):
-  * `clojure -X:jar :group-id old-group-name && clojure -X:deploy`
-  * (ignore the warning from `depstar` about a non-reverse-domain-name group)
-  * `clojure -X:jar :group-id new.group.name && clojure -X:deploy`
-  * (this ensures I leave the repo with the new, verified, group name -- check with `git status` that no files are dirty)
-* Else this command is sufficient:
-  * `clojure -X:jar && clojure -X:deploy`
-
-> Note: all my libraries have `:jar` and `:deploy` as aliases in their `deps.edn` files which supply appropriate default values for the `:exec-args`. For example, from `clj-new`:
-
-```clj
-    ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
-          :exec-fn hf.depstar/jar
-          :exec-args {:jar "clj-new.jar" :sync-pom true}}
-    :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
-            :exec-fn deps-deploy.deps-deploy/deploy
-            :exec-args {:installer :remote :artifact "clj-new.jar"}}
-```
-
-> I use a generic name for the JAR file so it doesn't need to be updated: both `depstar` and `deps-deploy` use the `<groupId>`, `<artifactId>`, and `<version>` information from `pom.xml` to ascertain the correct coordinates and version to use. If your project was created initially by `clj-new`, it should also have `:jar` and `:deploy` aliases in the `deps.edn` file that was generated.
-
 ## Classpath
 
 By default, `depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:
@@ -335,6 +294,47 @@ user `deps.edn` file). For example:
                         :main-class project.core}}
   :direct-linking ["-Dclojure.compiler.direct-linking=true"]
 ```
+
+## My Deployment Process
+
+My libraries all follow a MAJOR.MINOR.COMMITS pattern for versioning, but this process could apply to
+your preferred versioning scheme as well.
+
+When I'm getting ready to cut a new release, and I have all the enhancements and bug fixes committed and
+pushed, I perform one last commit with the following updates:
+
+* Run `git pull` to ensure I have the latest changes locally.
+* Select a version number for the release
+  * For me, that's figured out by running `git rev-list --count HEAD` and adding one to get the COMMITS part of the release I'm about to make, as well as deciding whether MAJOR/MINOR also need an update (generally not).
+* Update the `CHANGELOG.md` file to list the new release version and date and ensure all the changes since the previous release are documented.
+* Update the `README.md` and other documentation to show the new version number everywhere.
+* Build the JAR file, also specifying `:sync-pom true :version '"x.y.z"'` to update the `<version>` and SCM `<tag>` in the `pom.xml` file at the same time.
+* Perform one last full test suite pass!
+* Verify all the diffs, then `git add`, `git commit`, and `git push`.
+* Then I draft a new release on GitHub and use the information in `CHANGELOG.md` in the release notes, and cut the release on GitHub.
+* Now I `git pull`, check that only a new tag came back.
+* Perform a final full test suite pass (yes, even though I just ran it before the `git push`/`git pull` cycle -- I'm paranoid, okay?).
+* If I'm double-publishing a library (under different group names, as I'm encouraging users to start using the new verified group name for my library):
+  * `clojure -X:jar :group-id old-group-name && clojure -X:deploy`
+  * (ignore the warning from `depstar` about a non-reverse-domain-name group)
+  * `clojure -X:jar :group-id new.group.name && clojure -X:deploy`
+  * (this ensures I leave the repo with the new, verified, group name -- check with `git status` that no files are dirty)
+* Else this command is sufficient:
+  * `clojure -X:jar && clojure -X:deploy`
+
+> Note: all my libraries have `:jar` and `:deploy` as aliases in their `deps.edn` files which supply appropriate default values for the `:exec-args`. For example, from `clj-new`:
+
+```clj
+    ;; override the example :jar alias with a specific one:
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+          :exec-fn hf.depstar/jar
+          :exec-args {:jar "clj-new.jar" :sync-pom true}}
+    :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
+            :exec-fn deps-deploy.deps-deploy/deploy
+            :exec-args {:installer :remote :artifact "clj-new.jar"}}
+```
+
+> I use a generic name for the JAR file so it doesn't need to be updated: both `depstar` and `deps-deploy` use the `<groupId>`, `<artifactId>`, and `<version>` information from `pom.xml` to ascertain the correct coordinates and version to use. If your project was created initially by `clj-new`, it should also have `:jar` and `:deploy` aliases in the `deps.edn` file that was generated.
 
 ## `depstar` and CI Environments
 
