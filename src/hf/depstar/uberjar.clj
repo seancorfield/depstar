@@ -20,9 +20,15 @@
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *debug* nil)
-(def ^:dynamic ^:private *exclude* nil)
 (def ^:dynamic ^:private *debug-clash* nil)
+(def ^:dynamic ^:private *delete-on-exit* nil)
+(def ^:dynamic ^:private *exclude* nil)
 (def ^:dynamic ^:private *verbose* nil)
+
+(defn- delete-path-on-exit
+  "Given a Path, register it for deletion on exit of this process."
+  [^Path path]
+  (.deleteOnExit (.toFile path)))
 
 (defn- env-prop
   "Given a setting name, get its Boolean value from the environment,
@@ -161,7 +167,10 @@
     (Files/copy target temp2 ^"[Ljava.nio.file.CopyOption;" copy-opts)
     (.loadCacheFiles cache (.elements (java.util.Vector. urls)))
     (with-open [os (Files/newOutputStream target open-opts)]
-      (.writeCache cache os))))
+      (.writeCache cache os))
+    (when *delete-on-exit*
+      (delete-path-on-exit temp2)
+      (delete-path-on-exit temp1))))
 
 (defmethod clash
   :default
@@ -646,7 +655,8 @@
    {:success false :reason :no-jar}
 
    :else
-   (let [{:keys [aot classpath compile-aliases compile-fn compile-ns debug-clash exclude
+   (let [{:keys [aot classpath compile-aliases compile-fn compile-ns
+                 debug-clash delete-on-exit exclude
                  group-id jar jar-type jvm-opts main-class no-pom paths-only
                  pom-file sync-pom verbose]
           :or {jar-type :uber}
@@ -721,6 +731,8 @@
                        (logger/warn ":aot true but no namespaces to compile -- ignoring"))
          tmp-c-dir   (when do-aot
                        (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
+         _           (when (and tmp-c-dir delete-on-exit)
+                       (delete-path-on-exit tmp-c-dir))
          cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
          c-cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) c-cp)
          aot-failure (when do-aot
@@ -732,6 +744,11 @@
        {:success false :reason :aot-failed}
 
        (let [tmp-z-dir (Files/createTempDirectory "depstarz" (make-array FileAttribute 0))
+             _         (when delete-on-exit
+                         ;; the JAR file is created in this directory and then
+                         ;; moved to the target location but we may still need
+                         ;; to clean up the temporary directory itself:
+                         (delete-path-on-exit tmp-z-dir))
              dest-name (str/replace jar #"^.*[/\\]" "")
              jar-path  (.resolve tmp-z-dir ^String dest-name)
              jar-file  (java.net.URI. (str "jar:" (.toUri jar-path)))
@@ -745,8 +762,9 @@
              (reset! multi-release? false)
              (logger/info "Building" (name jar-type) "jar:" jar)
              (binding [*debug* (env-prop "debug")
-                       *exclude* (mapv re-pattern exclude)
                        *debug-clash* debug-clash
+                       *delete-on-exit* delete-on-exit
+                       *exclude* (mapv re-pattern exclude)
                        *verbose* verbose]
                (run! #(copy-source % tmp options) cp)
                (copy-manifest tmp options)

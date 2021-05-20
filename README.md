@@ -238,6 +238,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:compile-fn` -- if specified, this function is used instead of `clojure.core/compile`: this is intended to support scenarios where some additional code needs to be run around AOT compilation (such as when working with cljfx)
 * `:compile-ns` -- if specified, a vector of symbols and regexes to match namespaces to compile, and whose `.class` files to include in the JAR file; may also be the keyword `:all` as a shorthand for a vector of all namespaces in source code directories found on the classpath
 * `:debug-clash` -- if `true`, print warnings about clashing jar items (and what `depstar` did about them; like the legacy `-D` / `--debug-clash` option)
+* `:delete-on-exit` -- if `true`, register any temporary files/directories for deletion when `depstar` exits, instead of just letting the O/S clean up "eventually".
 * `:exclude` -- if specified, should be a vector of strings to use as regex patterns for excluding files from the JAR (like the legacy `-X` / `--exclude` option)
 * `:group-id` -- if specified, the symbol used for the `groupId` field in `pom.xml` and `pom.properties` when building the JAR file (this should generally be a reverse domain name); **your `pom.xml` file will be updated to match!**
 * `:jar` -- the name of the destination JAR file (may need to be a quoted string if the path/name is not valid as a Clojure symbol; like the legacy `-J` / `--jar` option)
