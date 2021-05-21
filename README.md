@@ -315,13 +315,7 @@ pushed, I perform one last commit with the following updates:
 * Then I draft a new release on GitHub and use the information in `CHANGELOG.md` in the release notes, and cut the release on GitHub.
 * Now I `git pull`, check that only a new tag came back.
 * Perform a final full test suite pass (yes, even though I just ran it before the `git push`/`git pull` cycle -- I'm paranoid, okay?).
-* If I'm double-publishing a library (under different group names, as I'm encouraging users to start using the new verified group name for my library):
-  * `clojure -X:jar :group-id old-group-name && clojure -X:deploy`
-  * (ignore the warning from `depstar` about a non-reverse-domain-name group)
-  * `clojure -X:jar :group-id new.group.name && clojure -X:deploy`
-  * (this ensures I leave the repo with the new, verified, group name -- check with `git status` that no files are dirty)
-* Else this command is sufficient:
-  * `clojure -X:jar && clojure -X:deploy`
+* Build and publish the JAR file: `clojure -X:jar && clojure -X:deploy`
 
 > Note: all my libraries have `:jar` and `:deploy` as aliases in their `deps.edn` files which supply appropriate default values for the `:exec-args`. For example, from `clj-new`:
 
