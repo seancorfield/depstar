@@ -6,7 +6,7 @@
             [clojure.tools.deps.alpha.gen.pom :as pom]
             [clojure.tools.logging :as logger]
             [clojure.tools.namespace.find :as tnsf])
-  (:import (java.io File InputStream PushbackReader)
+  (:import (java.io File InputStream PushbackReader InputStreamReader BufferedReader)
            (java.nio.file CopyOption LinkOption OpenOption
                           StandardCopyOption StandardOpenOption
                           FileSystem FileSystems Files
@@ -532,7 +532,7 @@
   If compile-fn is omitted (nil), clojure.core/compile is
   used. Otherwise, a require of the namespace is added and
   a call of resolve is added."
-  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
+  [ns-syms jvm-opts cp compile-fn tmp-c-dir]
   (let [java     (or (System/getenv "JAVA_CMD") "java")
         windows? (-> (System/getProperty "os.name")
                      (str/lower-case)
@@ -550,9 +550,12 @@
                             "-e"
                             (str "(binding,[*compile-path*,"
                                  (pr-str (str tmp-c-dir))
-                                 "]," comp-req "(" comp-fn ",'"
-                                 (name ns-sym)
-                                 "))")]))]
+                                 "]," comp-req
+                                 (str/join
+                                  ","
+                                  (for [ns-sym ns-syms]
+                                    (str "(println,\"Compiling\",'" (name ns-sym) ")(" comp-fn ",'" (name ns-sym) ")")))
+                                 ")")]))]
     (if windows?
       (mapv #(str/replace % "\"" "\\\"") args)
       args)))
@@ -564,21 +567,25 @@
   to, compile the namespace and return a Boolean indicating
   any failures (the failures will be printed to standard
   error)."
-  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
-  (logger/info "Compiling" ns-sym "...")
+  [ns-syms jvm-opts cp compile-fn tmp-c-dir]
   (let [p (.start
            (ProcessBuilder.
             ^"[Ljava.lang.String;"
             (into-array
              String
-             (compile-arguments ns-sym jvm-opts cp compile-fn tmp-c-dir))))]
+             (compile-arguments ns-syms jvm-opts cp compile-fn tmp-c-dir))))]
+    (with-open [rdr (BufferedReader.
+                     (InputStreamReader.
+                      (.getInputStream p)))]
+      (doseq [line (line-seq rdr)]
+        (logger/info line)))
     (.waitFor p)
     (let [stderr (slurp (.getErrorStream p))]
       (when (seq stderr) (println stderr))
       (if (zero? (.exitValue p))
         false ; no AOT failure
         (do
-          (logger/error (str "Compilation of " ns-sym " failed!"))
+          (logger/error (str "Compilation failed!"))
           true)))))
 
 (defn- print-help []
@@ -736,8 +743,7 @@
          cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
          c-cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) c-cp)
          aot-failure (when do-aot
-                       (some #(compile-it % jvm-opts c-cp compile-fn tmp-c-dir)
-                             compile-ns))]
+                       (compile-it compile-ns jvm-opts c-cp compile-fn tmp-c-dir))]
 
      (if aot-failure
 
