@@ -19,4 +19,4 @@ jobs:
         with:
           tools-deps: '1.10.3.822'
       - name: Run Tests
-        run: clojure -X:test:runner
+        run: clojure -X:test

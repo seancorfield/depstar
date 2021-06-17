@@ -5,9 +5,9 @@
         org.clojure/tools.namespace {:mvn/version "1.1.0"}
         org.apache.logging.log4j/log4j-core {:mvn/version "2.14.1"}
         org.slf4j/slf4j-simple {:mvn/version "1.7.30"}}
- :aliases {:test {:extra-paths ["test"]}
-           :runner
-           {:extra-deps {io.github.cognitect-labs/test-runner
+ :aliases {:test
+           {:extra-paths ["test"]
+            :extra-deps {io.github.cognitect-labs/test-runner
                          {:git/url "https://github.com/cognitect-labs/test-runner"
                           :sha "2d69f33d7980c3353b246c28f72ffeafbd9f2fab"}}
             :exec-fn cognitect.test-runner.api/test}
