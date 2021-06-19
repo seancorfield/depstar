@@ -1,3 +1,5 @@
+;; copyright (c) 2020-2021 sean corfield
+
 (ns hf.depstar-test
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
@@ -45,6 +47,11 @@
                                (.toString w))))))
           entries)))))
 
+(def ^:private depstar-src        "How many source files in depstar" 8)
+(def ^:private depstar-class-low' "Lower bound on uberjar classes"  50)
+(def ^:private depstar-class-low  "Lower bound on depstar classes"  95)
+(def ^:private depstar-class-high "Upper bound on depstar classes" 150)
+
 (deftest simple-thin-jar-test
   (let [jar (File/createTempFile "test" ".jar")]
     (testing "just source"
@@ -53,7 +60,7 @@
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)})))
       (let [contents (:entries (read-jar jar))]
         (is (zero? (count (filter #(str/ends-with? % ".class") contents))))
-        (is (= 4 (count (filter #(str/ends-with? % ".clj") contents))))))
+        (is (= depstar-src (count (filter #(str/ends-with? % ".clj") contents))))))
     (testing "transitive compilation"
       (println "[COMPILATION]")
       (is (= {:success true}
@@ -62,9 +69,11 @@
       (let [contents (:entries (read-jar jar))]
         ;; this should be valid for a while
         (is (< 1000 (count (filter #(str/starts-with? % "clojure/") contents)) 2000))
-        (is (= 4 (count (filter #(str/ends-with? % ".clj") contents))))
-        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
-                                       (str/ends-with? % ".class")) contents)) 100))))
+        (is (= depstar-src (count (filter #(str/ends-with? % ".clj") contents))))
+        (is (< depstar-class-low
+               (count (filter #(and (str/starts-with? % "hf/depstar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))))
     (testing "compilation with exclusion"
       (println "[COMPILATION/EXCLUSION]")
       (is (= {:success true}
@@ -73,8 +82,10 @@
                              :exclude ["clojure/.*"]})))
       (let [contents (:entries (read-jar jar))]
         (is (zero? (count (filter #(str/starts-with? % "clojure/") contents))))
-        (is (= 4 (count (filter #(str/ends-with? % ".clj") contents))))
-        (is (< 50 (count (filter #(str/ends-with? % ".class") contents)) 100))))))
+        (is (= depstar-src (count (filter #(str/ends-with? % ".clj") contents))))
+        (is (< depstar-class-low
+               (count (filter #(str/ends-with? % ".class") contents))
+               depstar-class-high))))))
 
 (deftest compile-ns-using-regex-test
   (let [jar (File/createTempFile "test" ".jar")]
@@ -84,17 +95,19 @@
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
                              :compile-ns :all})))
       (let [contents (:entries (read-jar jar))]
-        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
-                                       (str/ends-with? % ".class")) contents))
-               100))))
+        (is (< depstar-class-low
+               (count (filter #(and (str/starts-with? % "hf/depstar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))))
     (testing "Reproducing the same result of :compile-ns with symbol using regex"
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
                              :compile-ns ["hf.depstar.*"]})))
       (let [contents (:entries (read-jar jar))]
-        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
-                                       (str/ends-with? % ".class")) contents))
-               100))))
+        (is (< depstar-class-low
+               (count (filter #(and (str/starts-with? % "hf/depstar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))))
     (testing "Regex must be a full file match."
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
@@ -107,12 +120,14 @@
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
                              :compile-ns ['hf.depstar "hf.depstar.uber.*"]})))
       (let [contents (:entries (read-jar jar))]
-        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar")
-                                       (str/ends-with? % ".class")) contents))
-               100))
-        (is (< 50 (count (filter #(and (str/starts-with? % "hf/depstar/uberjar")
-                                       (str/ends-with? % ".class")) contents))
-               100))))))
+        (is (< depstar-class-low
+               (count (filter #(and (str/starts-with? % "hf/depstar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))
+        (is (< depstar-class-low'
+               (count (filter #(and (str/starts-with? % "hf/depstar/uberjar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))))))
 
 (deftest issue-5
   (println "[#5]")
