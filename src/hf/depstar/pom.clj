@@ -6,30 +6,57 @@
             [clojure.string :as str]
             [clojure.tools.deps.alpha.gen.pom :as pom]
             [clojure.tools.logging :as logger]
+            [hf.depstar.files :as files]
             [hf.depstar.task :as task])
-  (:import (java.io File)))
+  (:import (java.io File)
+           (java.nio.file Files)
+           (java.nio.file.attribute FileAttribute)))
 
 (set! *warn-on-reflection* true)
 
-(defn pom-sync
+(defn- pom-sync
   "Give a (pom) file, the project basis, and the options, synchronize
-  the group/artifact/version if requested (using tools.deps.alpha)."
-  [^File pom-file basis {:keys [artifact-id group-id version]}]
-  (let [new-pom (not (.exists pom-file))]
+  the group/artifact/version if requested (using tools.deps.alpha).
+
+  t.d.a always creates pom.xml within the target-dir but src-pom does
+  not need to end in pom.xml really.
+
+  Our pom-file option is generally the target version, but if we honor
+  target-dir it will become the src-pom (only) and we need to reflect
+  that in the options we return."
+  [basis {:keys [artifact-id group-id pom-file target-dir version]
+          :or  {pom-file "pom.xml"}
+          :as  options}]
+  (let [source-pom (io/file pom-file)
+        target-pom (io/file target-dir "pom.xml")
+        new-pom    (not (.exists target-pom))]
+    ;; if we are synchronizing to a different pom.xml file, the source-pom
+    ;; must actually exist:
+    (when-not (= (.getCanonicalPath source-pom) (.getCanonicalPath target-pom))
+      (when-not (.exists source-pom)
+        (throw (ex-info "When source and target pom differ, source must exist"
+                        {:source-pom (.getPath source-pom)
+                         :target-pom (.getPath target-pom)}))))
     ;; #56 require GAV when sync-pom used to create pom.xml:
     (if (and new-pom (not (and group-id artifact-id version)))
       (logger/warn "Ignoring :sync-pom because :group-id, :artifact-id, and"
                    ":version are all required when creating a new 'pom.xml' file!")
       (do
-        (logger/info "Synchronizing" (.getName pom-file))
+        (Files/createDirectories (.getParent (files/path (.getPath target-pom)))
+                                 (make-array FileAttribute 0))
+        (logger/info "Synchronizing"
+                     (if (= (.getCanonicalPath source-pom) (.getCanonicalPath target-pom))
+                       (.getName source-pom)
+                       (str (.getName source-pom) " to " target-dir "/pom.xml")))
         (pom/sync-pom
          {:basis basis
-          :params (cond-> {:target-dir (or (.getParent pom-file) ".")
-                           :src-pom    (.getPath pom-file)}
+          :params (cond-> {:target-dir target-dir
+                           :src-pom    (.getPath source-pom)}
                     (and new-pom group-id artifact-id)
                     (assoc :lib (symbol (name group-id) (name artifact-id)))
                     (and new-pom version)
-                    (assoc :version version))})))))
+                    (assoc :version version))})))
+    (assoc options :pom-file (.getPath target-pom))))
 
 (defn- first-by-tag
   [pom-text tag]
@@ -37,7 +64,7 @@
       (first)
       (second)))
 
-(defn sync-gav
+(defn- sync-gav
   "Given a pom file and options, return the group/artifact IDs and
   the version. These are taken from the options, if present, otherwise
   they are read in from the pom file.
@@ -98,6 +125,7 @@
   * no-pom      (boolean) -- do not read/update group/artifact/version
   * pom-file    (string)  -- override default pom.xml path
   * sync-pom    (boolean) -- sync deps to pom.xml, create if missing
+  * target-dir  (string)  -- override default pom.xml generation path
   * version     (string)  -- <version> to write to pom.xml
 
   Outputs:
@@ -105,22 +133,22 @@
   * group-id    (string)  -- if not no-pom, <groupId> from pom.xml
   * version     (string)  -- if not no-pom, <version> from pom.xml"
   [options]
-  (let [{:keys [group-id no-pom pom-file sync-pom]
+  (let [{:keys [group-id no-pom pom-file sync-pom target-dir]
          :or   {pom-file "pom.xml"}
          :as   options}
         (task/preprocess-options options)
         _
         (when (and group-id (not (re-find #"\." (str group-id))))
           (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
+        ;; we allow target-dir to be a symbol or a string:
+        target-dir (or (some-> target-dir str) (.getParent (io/file pom-file)) ".")
         ;; ensure defaulted options are present:
-        options    (assoc options :pom-file pom-file)
+        options    (assoc options :pom-file pom-file :target-dir target-dir)
 
         basis      (task/calc-project-basis options)
-        ^File
-        pom-file   (io/file pom-file)
-        _
-        (when sync-pom
-          (pom-sync pom-file basis options))]
+        options    (if sync-pom (pom-sync basis options) options)
+        ^File      ; check the pom-file that pom-sync may have generated:
+        pom-file   (io/file (:pom-file options))]
     (merge options
            (when (and (not no-pom) (.exists pom-file))
              (sync-gav pom-file options)))))

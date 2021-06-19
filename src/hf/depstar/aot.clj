@@ -47,7 +47,7 @@
       (mapv #(str/replace % "\"" "\\\"") args)
       args)))
 
-(defn compile-it
+(defn- compile-it
   "Given a namespace to compile (a symbol), a vector of JVM
   options to apply, the classpath, a symbol for the compile
   function, and the temporary directory to write the classes
