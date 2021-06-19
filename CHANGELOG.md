@@ -1,6 +1,7 @@
 # Changes
 
 * 2.0.next in progress
+  * Address #83 by explaining possible `Skipping paths` warning when `:sync-pom true`.
   * Address #80 by adding `:delete-on-exit true` exec arg so users can opt-in to early deletion of temporary files and directories, instead of relying on the O/S to clean them "eventually".
   * Address #74 by noting CI environment caching "gotchas".
   * Update `test-runner`.

@@ -190,6 +190,8 @@ You can generate a minimal `pom.xml` file using the `clojure -Spom` command (and
 * If no `pom.xml` file exists (where `:pom-file` specifies or else in the current directory), you will also need to specify `:group-id`, `:artifact-id`, and `:version`, and a minimal pom file will be created. Your group ID should generally be a reverse domain name, such as `net.clojars.username`, `com.github.username`, `com.mycompany`, etc.
 * If a `pom.xml` file already exists (per `:pom-file` or in the current directory), it will be updated to reflect the latest dependencies from the project basis, and any `:group-id`/`:artifact-id` pair and/or `:version` supplied as exec arguments.
 
+> Note: when using `:sync-pom true`, the underlying `tools.deps.alpha` library may print out a `Skipping paths` warning. This happens if you have more than one path specified in `:paths` in your `deps.edn` file: `tools.deps.alpha` treats the first element as the "source path" and uses it to generate the `build` > `sourceDirectory` entry in `pom.xml`. It prints the warning to show you what it is ignoring. Accordingly, your source path should come first, followed by any additional paths needed, such as `"resources"`. If you see `Skipping paths: src` then you probably have `:paths ["resources" "src"]` and you should update that to `:paths ["src" "resources"]` instead.
+
 If you build an uberjar with a `pom.xml` file present and do not specify `:no-pom true`, you can run the resulting file as follows:
 
 ```bash
