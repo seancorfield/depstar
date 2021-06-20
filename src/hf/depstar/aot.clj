@@ -8,7 +8,8 @@
             [clojure.tools.namespace.find :as tnsf]
             [hf.depstar.files :as files]
             [hf.depstar.task :as task])
-  (:import (java.nio.file Files)
+  (:import (java.io InputStreamReader BufferedReader)
+           (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
 
 (set! *warn-on-reflection* true)
@@ -22,7 +23,7 @@
   If compile-fn is omitted (nil), clojure.core/compile is
   used. Otherwise, a require of the namespace is added and
   a call of resolve is added."
-  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
+  [ns-syms jvm-opts cp compile-fn tmp-c-dir]
   (let [java     (or (System/getenv "JAVA_CMD") "java")
         windows? (-> (System/getProperty "os.name")
                      (str/lower-case)
@@ -32,6 +33,9 @@
         comp-fn  (if compile-fn
                    (str "(resolve,'" compile-fn ")")
                    "compile")
+        compnses (for [ns-sym ns-syms]
+                   (str "(println,'Compiling,'" (name ns-sym) ")"
+                        "(" comp-fn ",'" (name ns-sym) ")"))
         args     (-> [java]
                      (into jvm-opts)
                      (into ["-cp"
@@ -40,35 +44,46 @@
                             "-e"
                             (str "(binding,[*compile-path*,"
                                  (pr-str (str tmp-c-dir))
-                                 "]," comp-req "(" comp-fn ",'"
-                                 (name ns-sym)
-                                 "))")]))]
+                                 "]," comp-req
+                                 (str/join "," compnses)
+                                 ")")]))]
     (if windows?
       (mapv #(str/replace % "\"" "\\\"") args)
       args)))
 
-(defn- compile-it
-  "Given a namespace to compile (a symbol), a vector of JVM
-  options to apply, the classpath, a symbol for the compile
-  function, and the temporary directory to write the classes
-  to, compile the namespace and return a Boolean indicating
-  any failures (the failures will be printed to standard
-  error)."
-  [ns-sym jvm-opts cp compile-fn tmp-c-dir]
-  (logger/info "Compiling" ns-sym "...")
+(defn- compile-them
+  "Given a sequence of namespaces to compile (symbols), a
+  vector of JVM options to apply, the classpath, a symbol
+  for the compile function, and the directory to write the
+  classes to, compile the namespaces and return a Boolean
+  indicating any failures (the failures will be printed to
+  standard error)."
+  [ns-syms jvm-opts cp compile-fn tmp-c-dir]
   (let [p (.start
            (ProcessBuilder.
             ^"[Ljava.lang.String;"
             (into-array
              String
-             (compile-arguments ns-sym jvm-opts cp compile-fn tmp-c-dir))))]
+             (compile-arguments ns-syms jvm-opts cp compile-fn tmp-c-dir))))]
+    (with-open [rdr (BufferedReader.
+                     (InputStreamReader.
+                      (.getInputStream p)))]
+      ;; prior to batching the compiles, we just printed the
+      ;; Compiling ns ... line and no other stdout so we try
+      ;; to mimic that here:
+      (doseq [line (line-seq rdr) :when (str/starts-with? line "Compiling ")]
+        (logger/info line "...")))
     (.waitFor p)
+    ;; this may lead to a slightly strange experience where
+    ;; all the standard output appears for all the compiles
+    ;; followed by any standard error for the batch but it
+    ;; should be sufficient for folks to debug problems:
     (let [stderr (slurp (.getErrorStream p))]
       (when (seq stderr) (println stderr))
       (if (zero? (.exitValue p))
         false ; no AOT failure
         (do
-          (logger/error (str "Compilation of " ns-sym " failed!"))
+          (logger/error (str "Compilation failed!"))
           true)))))
 
 (defn task*
@@ -78,6 +93,7 @@
   * aot
   * classpath
   * compile-aliases
+  * compile-batch (defaults to the size of compile-ns)
   * compile-fn
   * compile-ns
   * delete-on-exit
@@ -90,7 +106,7 @@
   * classpath-roots
   "
   [options]
-  (let [{:keys [aot classpath compile-aliases compile-fn compile-ns
+  (let [{:keys [aot classpath compile-aliases compile-batch compile-fn compile-ns
                 delete-on-exit jar-type jvm-opts main-class paths-only
                 target-dir]
          :or {jar-type :uber}
@@ -169,7 +185,7 @@
         c-cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) c-cp)]
 
     (when do-aot
-      (when (some #(compile-it % jvm-opts c-cp compile-fn tmp-c-dir)
-                  compile-ns)
+      (when (some #(compile-them % jvm-opts c-cp compile-fn tmp-c-dir)
+                  (partition-all (or compile-batch (count compile-ns)) compile-ns))
         (throw (ex-info "AOT compilation failed" {}))))
     (assoc options :classpath-roots cp)))

@@ -99,6 +99,15 @@
                (count (filter #(and (str/starts-with? % "hf/depstar")
                                     (str/ends-with? % ".class")) contents))
                depstar-class-high))))
+    (testing "Ensure :compile-ns :all with :compile-batch works"
+      (is (= {:success true}
+             (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)
+                             :compile-ns :all :compile-batch 3})))
+      (let [contents (:entries (read-jar jar))]
+        (is (< depstar-class-low
+               (count (filter #(and (str/starts-with? % "hf/depstar")
+                                    (str/ends-with? % ".class")) contents))
+               depstar-class-high))))
     (testing "Reproducing the same result of :compile-ns with symbol using regex"
       (is (= {:success true}
              (sut/build-jar {:jar-type :thin :no-pom true :jar (str jar)

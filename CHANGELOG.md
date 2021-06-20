@@ -3,6 +3,7 @@
 * 2.0.next in progress 2.1.next? Split into tasks? (will be VGN only)
   * Address #83 by explaining possible `Skipping paths` warning when `:sync-pom true`.
   * Address #82 by reorganizing internals into three "tasks" that can each be run via the `-X` CLI option. _[This is a work in progress: currently, only the implementation has been broken into tasks -- there is no API namespace for running these tasks directly!]_
+  * Address #81 by batching compilation into a single process, with a `:compile-batch` option to use multiple processes if there are too many namespaces.
   * Address #80 by adding `:delete-on-exit true` exec arg so users can opt-in to early deletion of temporary files and directories, instead of relying on the O/S to clean them "eventually".
   * Address #74 by noting CI environment caching "gotchas".
   * Update `test-runner`.
