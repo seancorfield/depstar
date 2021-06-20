@@ -84,13 +84,15 @@
   * jar-type
   * main-class
   * paths-only
+  * target-dir
 
   Outputs:
   * classpath-roots
   "
   [options]
   (let [{:keys [aot classpath compile-aliases compile-fn compile-ns
-                delete-on-exit jar-type jvm-opts main-class paths-only]
+                delete-on-exit jar-type jvm-opts main-class paths-only
+                target-dir]
          :or {jar-type :uber}
          :as options}
         (task/preprocess-options options)
@@ -154,9 +156,14 @@
         _           (when (and aot (empty? compile-ns))
                       (logger/warn ":aot true but no namespaces to compile -- ignoring"))
         tmp-c-dir   (when do-aot
-                      (Files/createTempDirectory "depstarc" (make-array FileAttribute 0)))
-        _           (when (and tmp-c-dir delete-on-exit)
-                      (files/delete-path-on-exit tmp-c-dir))
+                      (if target-dir
+                        (let [classes (files/path (str target-dir "/classes"))]
+                          (Files/createDirectories classes (make-array FileAttribute 0))
+                          classes)
+                        (let [classes (Files/createTempDirectory "depstarc" (make-array FileAttribute 0))]
+                          (when delete-on-exit
+                            (files/delete-path-on-exit classes))
+                          classes)))
 
         cp          (into (cond-> [] do-aot (conj (str tmp-c-dir))) cp)
         c-cp        (into (cond-> [] do-aot (conj (str tmp-c-dir))) c-cp)]
