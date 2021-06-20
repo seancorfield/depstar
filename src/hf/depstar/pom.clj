@@ -37,8 +37,9 @@
         (throw (ex-info "When source and target pom differ, source must exist"
                         {:source-pom (.getPath source-pom)
                          :target-pom (.getPath target-pom)}))))
-    ;; #56 require GAV when sync-pom used to create pom.xml:
-    (if (and new-pom (not (and group-id artifact-id version)))
+    ;; #56 require GAV when sync-pom used to create pom.xml, if no source pom:
+    (if (and new-pom (not (.exists source-pom))
+             (not (and group-id artifact-id version)))
       (logger/warn "Ignoring :sync-pom because :group-id, :artifact-id, and"
                    ":version are all required when creating a new 'pom.xml' file!")
       (do

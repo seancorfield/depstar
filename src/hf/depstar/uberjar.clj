@@ -413,12 +413,13 @@
   * no-pom
   * paths-only
   * pom-file
+  * target-dir
   * verbose
 
   Outputs (none)."
   [options]
   (let [{:keys [classpath classpath-roots debug-clash delete-on-exit exclude
-                jar jar-type no-pom paths-only pom-file verbose]
+                jar jar-type no-pom paths-only pom-file target-dir verbose]
          :or {jar-type :uber}
          :as options}
         (task/preprocess-options options)
@@ -429,6 +430,11 @@
         (when (not jar)
           (throw (ex-info ":jar option is required" {})))
         jar        (some-> jar str) ; ensure we have a string
+        jar        (if target-dir
+                     (if (.getParent (io/file jar))
+                       jar ; ignore target, jar already contains a path
+                       (str target-dir "/" jar))
+                     jar)
         options    (assoc options ; ensure defaulted/processed options present
                           :jar        jar
                           :jar-type   jar-type)
