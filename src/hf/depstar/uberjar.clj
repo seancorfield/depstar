@@ -396,6 +396,8 @@
   (println "  :pom-file str      -- optional path to a different 'pom.xml' file")
   (println "  :repro false       -- include user 'deps.edn' when computing the classpath")
   (println "  :sync-pom true     -- synchronize 'pom.xml' dependencies, group, artifact, and version")
+  (println "  :target-dir str    -- specify a target directory for the generated files")
+  (println "                        (pom, classes, jar) which is kept around")
   (println "  :verbose true      -- explain what goes into the JAR file")
   (println "  :version str       -- specify the version (of the group/artifact)"))
 

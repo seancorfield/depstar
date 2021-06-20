@@ -101,7 +101,7 @@ clojure -X:depstar uberjar :classpath '"'$(clojure -Spath -A:webassets)'"' :jar 
 
 > Note: the `-Sdeps` argument to `clojure` only affects how the initial classpath is computed to run a program -- it cannot affect the classpath `depstar` itself computes from the `deps.edn` files. If you need to use `-Sdeps`, for example to specify alternate repos for dependencies, use the `:classpath` approach shown above.
 
-When building a library JAR (not an uberjar), ou can tell `depstar` to use only the `:paths` and
+When building a library JAR (not an uberjar), you can tell `depstar` to use only the `:paths` and
 `:extra-paths` from the project basis instead of the classpath by using the `:paths-only true`
 option (new in 2.0.206). This can be useful when you have `:local/root` and/or `:git/url`
 dependencies and you don't want them considered.
@@ -145,7 +145,7 @@ clojure -X:uberjar :jar MyProject.jar :aot true :main-class project.core
 java -jar MyProject.jar
 ```
 
-This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder, add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar including everything on the classpath, with a manifest specifying `project.core` as the main class.
+This will compile the `project.core` namespace, **which must have a `(:gen-class)` clause in its `ns` form**, into a temporary folder (by default), add that temporary folder to the classpath (even when you specify an explicit classpath with `:classpath` -- see above), build the uberjar including everything on the classpath, with a manifest specifying `project.core` as the main class.
 
 Remember that AOT compilation is transitive so, in addition to your `project.core` namespace with its `(:gen-class)`, this will also compile everything that `project.core` requires and include those `.class` files (as well as the sources). See the `:exclude` option for ways to exclude unwanted compiled `.class` files.
 
@@ -213,6 +213,23 @@ See the `:main-class` option above if you want `java -jar` to run your main func
 
 You can use the `:pom-file` exec argument to specify a path to the `pom.xml` file if it is not in the current directory.
 
+## Target Directory
+
+By default, `depstar` updates the `pom.xml` in place, compiles namespaces to a temporary folder, and builds the JAR in the current directory.
+You can specify `:pom-file` if the `pom.xml` file is not in the current directory, and `:jar` can specify a path for the JAR file if you
+want it created somewhere else.
+
+To behave more like other tooling, `depstar` supports a `:target-dir` option (as of 2.0.next), which will let `depstar` sync from
+a current `pom.xml` to a new one (in the target directory), compile namespaces to a `classes` folder inside the target directory,
+and build the JAR file into that directory too. The target directory (and the `classes` folder within it) remain after `depstar`
+exits for you to inspect.
+
+You can still specify `:pom-file` to provide a different source `pom.xml` file to use as the basis for the updated one in the target
+directory, and you can still specify `:jar` as a path, rather than just a filename, to have `depstar` build the JAR outside the target
+directory.
+
+> Note: the `classes` folder in the target directory is not cleaned out by `depstar` prior to compilation so the JAR file will use whatever is already in that folder if you specify AOT compilation without deleting `classes` first.
+
 ## Excluding Files
 
 By default, the following files are excluded from the output JAR:
@@ -253,6 +270,7 @@ The Clojure CLI added an `-X` option (in 1.10.1.697) to execute a specific funct
 * `:pom-file` -- if specified, should be a string that identifies the `pom.xml` file to use (an absolute or relative path)
 * `:repro` -- defaults to `true`, which excludes the user `deps.edn` from consideration; specify `:repro false` if you want the user `deps.edn` to be included when computing the project basis and classpath roots
 * `:sync-pom` -- if `true`, will run the equivalent of `clojure -Spom` to create or update your `pom.xml` file prior to building the JAR file
+* `:target-dir` -- if specified, a folder that `depstar` should generate files into (instead of just using temporary folders): the `pom.xml`, `classes` folder (from AOT), and `.jar` file will be written to this folder and it will be left in place after `depstar` exits (unlike the temporary folders)
 * `:verbose` -- if `true`, be verbose about what goes into the JAR file (like the legacy `-v` / `--verbose` option)
 * `:version` -- if specified, the symbol used for the `version` field in `pom.xml` and `pom.properties` when building the JAR file (and also for the VCS `tag` field if matches the current `version` field with a prefix of `v`); **your `pom.xml` file will be updated to match!**
 
