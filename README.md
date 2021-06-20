@@ -128,7 +128,7 @@ java -jar MyProject.jar
 
 ## AOT Compilation
 
-You can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR. `:compile-ns` accepts a vector of namespace symbols or regular expressions to match namespaces. It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
+You can specify namespaces to be AOT-compiled using the `:compile-ns` exec argument. Namespaces specified by `:compile-ns` will be compiled even for thin JAR files, allowing you to build libraries that include `:gen-class`-generated `.class` files. By default, `depstar` creates a temporary folder for the class files and adds it to the classpath roots automatically so that all the classes produced by compilation are added to the JAR (see also **Target Directory** below). `:compile-ns` accepts a vector of namespace symbols or regular expressions to match namespaces. It will also accept the keyword `:all` instead of a vector and it will attempt to find all the Clojure namespaces in source files in directories on the classpath (which normally corresponds to your own project's source files, but will also include `:local/root` dependencies and `:git/url` dependencies, since those show up as directories on the classpath).
 
 ```bash
 clojure -X:jar :jar MyProject.jar :compile-ns '[project.core]'
@@ -171,6 +171,11 @@ That is equivalent to the following `:exec-args`:
   :exec-args {:aot true :main-class project.core
               :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
 ```
+
+If `:compile-ns :all` produces a very long list of namespaces, compilation may fail
+because a single `clojure -e` command line is created for the compilation. You can
+specify `:compile-batch 10`, for example, to compile ten namespaces at a time if you
+run into this problem.
 
 ## `pom.xml`
 
