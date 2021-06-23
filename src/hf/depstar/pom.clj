@@ -6,8 +6,7 @@
             [clojure.string :as str]
             [clojure.tools.deps.alpha.gen.pom :as pom]
             [clojure.tools.logging :as logger]
-            [hf.depstar.files :as files]
-            [hf.depstar.task :as task])
+            [hf.depstar.files :as files])
   (:import (java.io File)
            (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
@@ -30,24 +29,19 @@
   (let [source-pom (io/file pom-file)
         target-pom (io/file target-dir "pom.xml")
         new-pom    (not (.exists target-pom))]
-    ;; if we are synchronizing to a different pom.xml file, the source-pom
-    ;; must actually exist:
-    (when-not (= (.getCanonicalPath source-pom) (.getCanonicalPath target-pom))
-      (when-not (.exists source-pom)
-        (throw (ex-info "When source and target pom differ, source must exist"
-                        {:source-pom (.getPath source-pom)
-                         :target-pom (.getPath target-pom)}))))
     ;; #56 require GAV when sync-pom used to create pom.xml, if no source pom:
     (if (and new-pom (not (.exists source-pom))
              (not (and group-id artifact-id version)))
-      (logger/warn "Ignoring :sync-pom because :group-id, :artifact-id, and"
-                   ":version are all required when creating a new 'pom.xml' file!")
+      (logger/warn ":group-id, :artifact-id, and :version are all required"
+                   "when creating a new 'pom.xml' file!")
       (do
         (Files/createDirectories (.getParent (files/path (.getPath target-pom)))
                                  (make-array FileAttribute 0))
         (logger/info "Synchronizing"
-                     (if (= (.getCanonicalPath source-pom) (.getCanonicalPath target-pom))
-                       (.getName source-pom)
+                     (if (or new-pom
+                             (= (.getCanonicalPath source-pom)
+                                (.getCanonicalPath target-pom)))
+                       (.getName target-pom)
                        (str (.getName source-pom) " to " target-dir "/pom.xml")))
         (pom/sync-pom
          {:basis basis
@@ -57,7 +51,7 @@
                     (assoc :lib (symbol (name group-id) (name artifact-id)))
                     (and new-pom version)
                     (assoc :version version))})))
-    (assoc options :pom-file (.getPath target-pom))))
+    (assoc options :pom-file (.getPath target-pom) ::gav-update new-pom)))
 
 (defn- first-by-tag
   [pom-text tag]
@@ -76,8 +70,9 @@
   the pom file will be updated to reflect those in the options hash map.
 
   Throw an exception if we cannot read them from the pom file."
-  [pom-file {:keys [artifact-id group-id version]}]
-  (let [pom-text     (slurp pom-file)
+  [^File pom-in ^File pom-out
+   {:keys [artifact-id group-id version] :as options}]
+  (let [pom-text     (slurp (if (.exists pom-in) pom-in pom-out))
         artifact-id' (first-by-tag pom-text :artifactId)
         group-id'    (first-by-tag pom-text :groupId)
         version'     (first-by-tag pom-text :version)
@@ -87,7 +82,8 @@
     (when-not (and (:group-id result) (:artifact-id result) (:version result))
       (throw (ex-info "Unable to establish group/artifact and version!" result)))
     ;; do we need to override any of the pom.xml values?
-    (when (or (and artifact-id artifact-id' (not= artifact-id artifact-id'))
+    (when (or (::gav-update options) ; forced update on (target) pom file
+              (and artifact-id artifact-id' (not= artifact-id artifact-id'))
               (and group-id    group-id'    (not= group-id    group-id'))
               (and version     version'     (not= version     version')))
       (logger/info "Updating pom.xml file to"
@@ -96,17 +92,23 @@
                         (:artifact-id result) " "
                         "{:mvn/version \"" (:version result) "\"}"
                         "}"))
-      (spit pom-file
+      (spit pom-out
             (cond-> pom-text
-              (and artifact-id artifact-id' (not= artifact-id artifact-id'))
+              (and artifact-id artifact-id'
+                   (or (::gav-update options)
+                       (not= artifact-id artifact-id')))
               (str/replace-first (str "<artifactId>" artifact-id' "</artifactId>")
                                  (str "<artifactId>" artifact-id  "</artifactId>"))
 
-              (and group-id    group-id'    (not= group-id group-id'))
+              (and group-id    group-id'
+                   (or (::gav-update options)
+                       (not= group-id group-id')))
               (str/replace-first (str "<groupId>" group-id' "</groupId>")
                                  (str "<groupId>" group-id  "</groupId>"))
 
-              (and version     version'     (not= version version'))
+              (and version     version'
+                   (or (::gav-update options)
+                       (not= version version')))
               (->
                (str/replace-first (str "<version>" version' "</version>")
                                   (str "<version>" version  "</version>"))
@@ -136,14 +138,16 @@
   [basis
    {:keys [no-pom pom-file sync-pom target-dir]
     :as   options}]
-  (let [target-pom (or target-dir (.getParent (io/file pom-file)) ".")
+  (let [pom-in     (io/file pom-file)
+        target-pom (or target-dir (.getParent pom-in) ".")
         options    (if (or target-dir sync-pom)
                      ;; target-dir for this operation is based on :target-dir
                      ;; or defaults to the path of :pom-file (if any):
                      (pom-sync basis (assoc options :target-dir target-pom))
                      options)
         ^File      ; check the pom-file that pom-sync may have generated:
-        pom-file   (io/file (:pom-file options))]
+        pom-out    (io/file (:pom-file options))]
     (merge options
-           (when (and (not no-pom) (.exists pom-file))
-             (sync-gav pom-file options)))))
+           (when (and (or (::gav-update options) (not no-pom))
+                      (.exists pom-out))
+             (sync-gav pom-in pom-out options)))))
