@@ -423,35 +423,25 @@
   * verbose
 
   Outputs (none)."
-  [options]
-  (let [{:keys [classpath classpath-roots debug-clash delete-on-exit exclude
-                jar jar-type no-pom paths-only pom-file target-dir verbose]
-         :or {jar-type :uber}
-         :as options}
-        (task/preprocess-options options)
-        _
-        (when (and (not= :thin jar-type) paths-only)
-          (logger/warn ":paths-only is ignored when building an uberjar"))
-        _
-        (when (not jar)
-          (throw (ex-info ":jar option is required" {})))
-        jar        (some-> jar str) ; ensure we have a string
-        jar        (if target-dir
-                     (if (.getParent (io/file jar))
-                       jar ; ignore target, jar already contains a path
-                       (str target-dir "/" jar))
-                     jar)
-        options    (assoc options ; ensure defaulted/processed options present
-                          :jar        jar
-                          :jar-type   jar-type)
-        basis      (task/calc-project-basis options)
-        cp         (or (some-> classpath (files/parse-classpath))
-                       (if (and paths-only (= :thin jar-type))
-                         (vec (into (set (:paths basis))
-                                    (-> basis :classpath-args :extra-paths)))
-                         (:classpath-roots basis)))
+  [basis
+   {:keys [classpath classpath-roots debug-clash delete-on-exit exclude
+           jar jar-type no-pom paths-only pom-file target-dir verbose]
+    :as options}]
+  (when (not jar)
+    (throw (ex-info ":jar option is required" {})))
+  (let [jar       (if target-dir
+                    (if (.getParent (io/file jar))
+                      jar ; ignore target, jar already contains a path
+                      (str target-dir "/" jar))
+                    jar)
+        options   (assoc options :jar jar)
+        cp        (or (some-> classpath (files/parse-classpath))
+                      (if (and paths-only (= :thin jar-type))
+                        (vec (into (set (:paths basis))
+                                   (-> basis :classpath-args :extra-paths)))
+                        (:classpath-roots basis)))
         ^File
-        pom-file   (io/file (or pom-file "pom.xml"))
+        pom-file  (io/file pom-file)
 
         classpath-roots (or classpath-roots cp)
 
@@ -515,17 +505,18 @@
    {:success false :reason :no-jar}
 
    :else
-   (let [options (pom/task* options)
+   (let [[basis options] (task/options-and-basis options)
+         options         (pom/task* basis options)
          {:keys [aot-failure] :as options}
          (try
-           (aot/task* options)
+           (aot/task* basis options)
            (catch ExceptionInfo _
              (assoc options :aot-failure true)))]
 
      (if aot-failure
        {:success false :reason :aot-failed}
        (try
-         (task* options)
+         (task* basis options)
          {:success true}
          (catch ExceptionInfo _
            {:success false :reason :copy-failure}))))))

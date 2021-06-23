@@ -24,9 +24,9 @@
   Our pom-file option is generally the target version, but if we honor
   target-dir it will become the src-pom (only) and we need to reflect
   that in the options we return."
-  [basis {:keys [artifact-id group-id pom-file target-dir version]
-          :or  {pom-file "pom.xml"}
-          :as  options}]
+  [basis
+   {:keys [artifact-id group-id pom-file target-dir version]
+    :as  options}]
   (let [source-pom (io/file pom-file)
         target-pom (io/file target-dir "pom.xml")
         new-pom    (not (.exists target-pom))]
@@ -133,23 +133,17 @@
   * artifact-id (string)  -- if not no-pom, <artifactId> from pom.xml
   * group-id    (string)  -- if not no-pom, <groupId> from pom.xml
   * version     (string)  -- if not no-pom, <version> from pom.xml"
-  [options]
-  (let [{:keys [group-id no-pom pom-file sync-pom target-dir]
-         :or   {pom-file "pom.xml"}
-         :as   options}
-        (task/preprocess-options options)
-        _
-        (when (and group-id (not (re-find #"\." (str group-id))))
-          (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
-        ;; we allow target-dir to be a symbol or a string:
-        target-dir (or (some-> target-dir str) (.getParent (io/file pom-file)) ".")
-        ;; ensure defaulted options are present:
-        options    (assoc options :pom-file pom-file :target-dir target-dir)
-
-        basis      (task/calc-project-basis options)
-        options    (if sync-pom (pom-sync basis options) options)
+  [basis
+   {:keys [no-pom pom-file sync-pom target-dir]
+    :as   options}]
+  (let [target-dir (or target-dir (.getParent (io/file pom-file)) ".")
+        options    (if sync-pom
+                     ;; target-dir for this operation is based on :target-dir
+                     ;; or defaults to the path of :pom-file (if any):
+                     (pom-sync basis (assoc options :target-dir target-dir))
+                     options)
         ^File      ; check the pom-file that pom-sync may have generated:
-        pom-file   (io/file (:pom-file options))]
+        pom-file   (io/file pom-file)]
     (merge options
            (when (and (not no-pom) (.exists pom-file))
              (sync-gav pom-file options)))))

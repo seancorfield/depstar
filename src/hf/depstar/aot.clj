@@ -105,30 +105,16 @@
   Outputs:
   * classpath-roots
   "
-  [options]
-  (let [{:keys [aot classpath compile-aliases compile-batch compile-fn compile-ns
-                delete-on-exit jar-type jvm-opts main-class paths-only
-                target-dir]
-         :or {jar-type :uber}
-         :as options}
-        (task/preprocess-options options)
-        _
-        (when (and aot (= :thin jar-type))
-          (logger/warn ":aot is not recommended for a 'thin' JAR!"))
-        _
-        (when (and jvm-opts (not (sequential? jvm-opts)))
-          (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
-        jvm-opts   (if (sequential? jvm-opts) (vec jvm-opts) [])
+  [basis
+   {:keys [aot classpath compile-aliases compile-batch compile-fn compile-ns
+           delete-on-exit jar-type jvm-opts main-class paths-only
+           target-dir]
+    :as options}]
+  (let [jvm-opts    (if (sequential? jvm-opts) (vec jvm-opts) [])
 
-        main-class (some-> main-class str) ; ensure we have a string
-        options    (assoc options ; ensure defaulted/processed options present
-                          :jar-type   jar-type
-                          :main-class main-class)
-
-        basis      (task/calc-project-basis options)
-        c-basis    (if-let [c-aliases (not-empty compile-aliases)]
-                     (task/calc-project-basis (assoc options :aliases c-aliases))
-                     basis)
+        c-basis     (if-let [c-aliases (not-empty compile-aliases)]
+                      (task/calc-project-basis (assoc options :aliases c-aliases))
+                      basis)
 
         cp          (or (some-> classpath (files/parse-classpath))
                         (if (and paths-only (= :thin jar-type))

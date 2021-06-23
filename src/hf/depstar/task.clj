@@ -10,7 +10,7 @@
 (defn- read-edn-files
   "Given as options map, use tools.deps.alpha to read and merge the
   applicable `deps.edn` files."
-  [{:keys [repro] :or {repro true}}]
+  [{:keys [repro]}]
   (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)]
     (t/merge-edns (if repro
                     [root-edn project-edn]
@@ -21,7 +21,7 @@
   applicable `deps.edn` files, combine the specified aliases, calculate
   the project basis (which will resolve/download dependencies), and
   return the calculated project basis."
-  [{:keys [aliases] :or {aliases []} :as options}]
+  [{:keys [aliases] :as options}]
   (let [deps     (read-edn-files options)
         combined (t/combine-aliases deps aliases)]
     ;; this could be cleaner, by only selecting the "relevant"
@@ -36,7 +36,7 @@
   (calc-project-basis {})
   (calc-project-basis {:aliases [:trial]}))
 
-(defn preprocess-options
+(defn- preprocess-options
   "Given an options hash map, if any of the values are keywords, look them
   up as alias values from the full basis (including user `deps.edn`).
 
@@ -55,3 +55,33 @@
                    opts))
                options
                options)))
+
+(defn options-and-basis
+  "Given a raw options hash map, apply our defaults and preprocess the
+  options (above), then use the options to calculate the project basis
+  (above), and return a pair of the basis and the updated options."
+  [options]
+  (let [{:keys [aot group-id jar-type jvm-opts paths-only]
+         :as options}
+        (preprocess-options
+         (merge {:aliases  []
+                 :jar-type :uber
+                 :jvm-opts []
+                 :pom-file "pom.xml"
+                 :repro    true}
+                (-> options
+                    ;; these can be symbols or strings:
+                    (update :jar        #(some-> % str))
+                    (update :main-class #(some-> % str))
+                    (update :target-dir #(some-> % str)))))]
+
+    (when (and aot (= :thin jar-type))
+      (logger/warn ":aot is not recommended for a 'thin' JAR!"))
+    (when (and group-id (not (re-find #"\." (str group-id))))
+      (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
+    (when (and jvm-opts (not (sequential? jvm-opts)))
+      (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
+    (when (and (not= :thin jar-type) paths-only)
+      (logger/warn ":paths-only is ignored when building an uberjar"))
+
+    [(calc-project-basis options) options]))
