@@ -2,7 +2,7 @@
 
 * 2.0.next in progress 2.1.next? Split into tasks? (will be VGN only)
   * Address #83 by explaining possible `Skipping paths` warning when `:sync-pom true`.
-  * Address #82 by reorganizing internals into three "tasks" that can each be run via the `-X` CLI option. _[This is a work in progress: currently, only the implementation has been broken into tasks -- there is no API namespace for running these tasks directly!]_
+  * Address #82 by reorganizing the internals into three "tasks" so that `hf.depstar/aot` and `hf.depstar/pom` are exposed and can be run via the `-X` CLI option. In order to make those more useful as standalone tasks, a new `:target-dir` option has been added so you can generate `pom.xml` and/or `classes` into a specific directory.
   * Address #81 by batching compilation into a single process, with a `:compile-batch` option to use multiple processes if there are too many namespaces. @stefanroex
   * Address #80 by adding `:delete-on-exit true` exec arg so users can opt-in to early deletion of temporary files and directories, instead of relying on the O/S to clean them "eventually".
   * Address #74 by noting CI environment caching "gotchas".
