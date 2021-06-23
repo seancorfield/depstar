@@ -2,7 +2,16 @@
 
 (ns hf.depstar
   "Entry point for clojure -X options."
-  (:require [hf.depstar.uberjar :as uber]))
+  (:require [hf.depstar.aot :as aot]
+            [hf.depstar.pom :as pom]
+            [hf.depstar.task :as task]
+            [hf.depstar.uberjar :as uber]))
+
+(defn aot
+  "-X entry point for AOT compilation."
+  [options]
+  (let [[basis options] (task/options-and-basis options)]
+    (aot/task* basis options)))
 
 (defn jar
   "Generic entry point for jar invocations.
@@ -29,6 +38,12 @@
   `:jar` can be specified as a symbol or a string."
   [options]
   (uber/build-jar-as-main (merge {:jar-type :thin} options)))
+
+(defn pom
+  "-X entry point for pom.xml creation/sync'ing."
+  [options]
+  (let [[basis options] (task/options-and-basis options)]
+    (pom/task* basis options)))
 
 (defn uberjar
   "Generic entry point for uberjar invocations.

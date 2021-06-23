@@ -136,14 +136,14 @@
   [basis
    {:keys [no-pom pom-file sync-pom target-dir]
     :as   options}]
-  (let [target-dir (or target-dir (.getParent (io/file pom-file)) ".")
-        options    (if sync-pom
+  (let [target-pom (or target-dir (.getParent (io/file pom-file)) ".")
+        options    (if (or target-dir sync-pom)
                      ;; target-dir for this operation is based on :target-dir
                      ;; or defaults to the path of :pom-file (if any):
-                     (pom-sync basis (assoc options :target-dir target-dir))
+                     (pom-sync basis (assoc options :target-dir target-pom))
                      options)
         ^File      ; check the pom-file that pom-sync may have generated:
-        pom-file   (io/file pom-file)]
+        pom-file   (io/file (:pom-file options))]
     (merge options
            (when (and (not no-pom) (.exists pom-file))
              (sync-gav pom-file options)))))
