@@ -1,6 +1,6 @@
 # Changes
 
-* 2.0.next in progress 2.1.next? Split into tasks? (will be VGN only)
+* 2.1.245 -- 2021-06-27
   * Address #83 by explaining possible `Skipping paths` warning when `:sync-pom true`.
   * Address #82 by reorganizing the internals into three "tasks" so that `hf.depstar/aot` and `hf.depstar/pom` are exposed and can be run via the `-X` CLI option. In order to make those more useful as standalone tasks, a new `:target-dir` option has been added so you can generate `pom.xml` and/or `classes` into a specific directory.
   * Address #81 by batching compilation into a single process, with a `:compile-batch` option to use multiple processes if there are too many namespaces. @stefanroex

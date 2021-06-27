@@ -16,15 +16,15 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 {
  :aliases {
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
   ;; generic depstar alias, use with jar or uberjar function name:
-  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
             :ns-default hf.depstar
             :exec-args {}}
  }
@@ -224,7 +224,7 @@ By default, `depstar` updates the `pom.xml` in place, compiles namespaces to a t
 You can specify `:pom-file` if the `pom.xml` file is not in the current directory, and `:jar` can specify a path for the JAR file if you
 want it created somewhere else.
 
-To behave more like other tooling, `depstar` supports a `:target-dir` option (as of 2.0.next), which will let `depstar` sync from
+To behave more like other tooling, `depstar` supports a `:target-dir` option (as of 2.1.245), which will let `depstar` sync from
 a current `pom.xml` to a new one (in the target directory), compile namespaces to a `classes` folder inside the target directory,
 and build the JAR file into that directory too. The target directory (and the `classes` folder within it) remain after `depstar`
 exits for you to inspect.
@@ -283,7 +283,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -312,7 +312,7 @@ user `deps.edn` file). For example:
   ;; using an alias as a value for :jvm-opts:
   :uberjar
   {:replace-deps
-   {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+   {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -346,7 +346,7 @@ pushed, I perform one last commit with the following updates:
 
 ```clj
     ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.0.216"}}
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.245"}}
           :exec-fn hf.depstar/jar
           :exec-args {:jar "clj-new.jar" :sync-pom true}}
     :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
@@ -440,7 +440,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 2.0.216
+Latest stable release: 2.1.245
 
 # License
 
