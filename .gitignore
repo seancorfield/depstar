@@ -1,9 +1,12 @@
 *~
 .java-version
+.classpath
 .clj-kondo
 .cpcache
 .lsp
+.project
 .rebel_readline_history
+.settings
 .socket-repl-port
 *.jar
 /classes
