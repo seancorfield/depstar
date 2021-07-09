@@ -71,7 +71,7 @@ clojure -Ttools install com.github.seancorfield/depstar '{:git/tag "v2.1.250"}' 
 # make an uberjar:
 clojure -Tdepstar uberjar :jar MyProject.jar
 # make a thin JAR:
-clojure -Tdepstar jar :jar MyProject.jar
+clojure -Tdepstar jar :jar MyLib.jar
 ```
 
 ## Classpath
