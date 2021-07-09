@@ -64,6 +64,16 @@ For deployment to Clojars, please read the [Clojars Verified Group Names policy]
 
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
 
+> If you are using the latest prerelease of the Clojure CLI, 1.10.3.905 onward, you can install `depstar` as a "tool" instead of updating your `deps.edn` file and then invoke it using the following commands:
+
+```bash
+clojure -Ttools install com.github.seancorfield/depstar '{:git/tag "v2.1.next"}' :as depstar
+# make an uberjar:
+clojure -Tdepstar uberjar :jar MyProject.jar
+# make a thin JAR:
+clojure -Tdepstar jar :jar MyProject.jar
+```
+
 ## Classpath
 
 By default, `depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:

@@ -1,6 +1,7 @@
 # Changes
 
 * 2.1.next in progress
+  * Add `:tools/usage` and instructions for new CLI `tools` support.
   * Update `clojure.tools.deps.alpha` and use its new `create-basis` function, instead of rolling my own.
 
 * 2.1.245 -- 2021-06-27
