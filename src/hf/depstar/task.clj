@@ -7,34 +7,10 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- read-edn-files
-  "Given as options map, use tools.deps.alpha to read and merge the
-  applicable `deps.edn` files."
-  [{:keys [repro]}]
-  (let [{:keys [root-edn user-edn project-edn]} (t/find-edn-maps)]
-    (t/merge-edns (if repro
-                    [root-edn project-edn]
-                    [root-edn user-edn project-edn]))))
-
-(defn calc-project-basis
-  "Given the options map, use tools.deps.alpha to read and merge the
-  applicable `deps.edn` files, combine the specified aliases, calculate
-  the project basis (which will resolve/download dependencies), and
-  return the calculated project basis."
-  [{:keys [aliases] :as options}]
-  (let [deps     (read-edn-files options)
-        combined (t/combine-aliases deps aliases)]
-    ;; this could be cleaner, by only selecting the "relevant"
-    ;; keys from combined for each of these three uses (but
-    ;; I'm waiting for the dust to settle on a possible higher-
-    ;; level API appearing in tools.deps.alpha itself):
-    (t/calc-basis (t/tool deps combined)
-                  {:resolve-args   combined
-                   :classpath-args combined})))
-
 (comment
-  (calc-project-basis {})
-  (calc-project-basis {:aliases [:trial]}))
+  (t/create-basis {})
+  (t/create-basis {:aliases [:test-issue-5]})
+  .)
 
 (defn- preprocess-options
   "Given an options hash map, if any of the values are keywords, look them
@@ -44,7 +20,7 @@
   and it is generally set automatically so we skip the lookup for that."
   [options]
   (let [kw-opts #{:compile-ns :jar-type} ; :compile-ns can be :all
-        aliases (:aliases (read-edn-files {:repro false}))]
+        aliases (:aliases (t/create-basis {}))]
     (reduce-kv (fn [opts k v]
                  (if (and (not (contains? kw-opts k)) (keyword? v))
                    (if (contains? aliases v)
@@ -61,7 +37,7 @@
   options (above), then use the options to calculate the project basis
   (above), and return a pair of the basis and the updated options."
   [options]
-  (let [{:keys [aot group-id jar-type jvm-opts paths-only]
+  (let [{:keys [aliases aot group-id jar-type jvm-opts paths-only repro]
          :as options}
         (preprocess-options
          (merge {:aliases  []
@@ -84,4 +60,6 @@
     (when (and (not= :thin jar-type) paths-only)
       (logger/warn ":paths-only is ignored when building an uberjar"))
 
-    [(calc-project-basis options) options]))
+    [(t/create-basis (cond-> {:aliases aliases}
+                       repro (assoc :user nil)))
+     options]))

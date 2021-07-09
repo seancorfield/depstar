@@ -1,5 +1,8 @@
 # Changes
 
+* 2.1.next in progress
+  * Update `clojure.tools.deps.alpha` and use its new `create-basis` function, instead of rolling my own.
+
 * 2.1.245 -- 2021-06-27
   * Address #83 by explaining possible `Skipping paths` warning when `:sync-pom true`.
   * Address #82 by reorganizing the internals into three "tasks" so that `hf.depstar/aot` and `hf.depstar/pom` are exposed and can be run via the `-X` CLI option. In order to make those more useful as standalone tasks, a new `:target-dir` option has been added so you can generate `pom.xml` and/or `classes` into a specific directory.

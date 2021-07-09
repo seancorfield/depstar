@@ -4,10 +4,10 @@
   "AOT compilation logic."
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.tools.deps.alpha :as t]
             [clojure.tools.logging :as logger]
             [clojure.tools.namespace.find :as tnsf]
-            [hf.depstar.files :as files]
-            [hf.depstar.task :as task])
+            [hf.depstar.files :as files])
   (:import (java.io InputStreamReader BufferedReader)
            (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
@@ -107,13 +107,14 @@
   "
   [basis
    {:keys [aot classpath compile-aliases compile-batch compile-fn compile-ns
-           delete-on-exit jar-type jvm-opts main-class paths-only
+           delete-on-exit jar-type jvm-opts main-class paths-only repro
            target-dir]
     :as options}]
   (let [jvm-opts    (if (sequential? jvm-opts) (vec jvm-opts) [])
 
         c-basis     (if-let [c-aliases (not-empty compile-aliases)]
-                      (task/calc-project-basis (assoc options :aliases c-aliases))
+                      (t/create-basis (cond-> {:aliases c-aliases}
+                                        repro (assoc :user nil)))
                       basis)
 
         cp          (or (some-> classpath (files/parse-classpath))
