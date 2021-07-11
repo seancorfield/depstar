@@ -47,7 +47,7 @@
                                (.toString w))))))
           entries)))))
 
-(def ^:private depstar-src        "How many source files in depstar" 8)
+(def ^:private depstar-src        "How many source files in depstar" 9)
 (def ^:private depstar-class-low' "Lower bound on uberjar classes"  50)
 (def ^:private depstar-class-low  "Lower bound on depstar classes"  95)
 (def ^:private depstar-class-high "Upper bound on depstar classes" 150)
