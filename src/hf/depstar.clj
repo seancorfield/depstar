@@ -62,7 +62,7 @@
 ```
   `:jar` can be specified as a symbol or a string."
   [options]
-  (uber/build-jar-as-main (merge {:jar-type :thin} options)))
+  (uber/build-jar-as-exec (merge {:jar-type :thin} options)))
 
 (defn pom
   "-X entry point for pom.xml creation/sync'ing.
@@ -115,4 +115,4 @@
 ```
   `:jar` can be specified as a symbol or a string."
   [options]
-  (uber/build-jar-as-main (merge {:jar-type :uber} options)))
+  (uber/build-jar-as-exec (merge {:jar-type :uber} options)))

@@ -405,7 +405,7 @@
   (println "  :verbose true      -- explain what goes into the JAR file")
   (println "  :version str       -- specify the version (of the group/artifact)"))
 
-(defn task*
+(defn ^:no-doc task*
   "Handling of JAR building as a -X task.
 
   Inputs (all optional, except where noted):
@@ -537,10 +537,28 @@
   (logger/warn "DEPRECATED: hf.depstar.uberjar/run* -- use hf.depstar.uberjar/build-jar instead.")
   (build-jar options))
 
-(defn ^:no-doc build-jar-as-main
+(defn ^:no-doc build-jar-as-exec
   "Command-line entry point for `-X` (and legacy `-M`) that performs
+  checking on arguments, offers help, and throws an exception if the
+  JAR-building process encounters errors. Returns options on success."
+  [options]
+  (let [result (build-jar options)]
+    (when-not (:success result)
+      (let [failure
+            (case (:reason result)
+              :help         (do (print-help) nil)
+              :no-jar       ":jar (output file) is required"
+              :aot-failed   "AOT compilation failed"
+              :copy-failure "Copying files into the JAR failed")]
+        (when failure (throw (ex-info failure result)))))
+    options))
+
+(defn ^:no-doc build-jar-as-main
+  "Deprecated entry point for `-X` (and legacy `-M`) that performs
   checking on arguments, offers help, and calls `(System/exit 1)` if
-  the JAR-building process encounters errors."
+  the JAR-building process encounters errors.
+
+  Note: calls (shutdown-agents) on success."
   [options]
   (let [result (build-jar options)]
     (if (:success result)
