@@ -16,15 +16,15 @@ Install this tool to an alias in your project `deps.edn` or user-level `deps.edn
 {
  :aliases {
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
   ;; generic depstar alias, use with jar or uberjar function name:
-  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
             :ns-default hf.depstar
             :exec-args {}}
  }
@@ -67,7 +67,7 @@ If you want to see all of the files that are being copied into the JAR file, add
 > If you are using the latest prerelease of the Clojure CLI, 1.10.3.905 onward, you can install `depstar` as a "tool" instead of updating your `deps.edn` file and then invoke it using the following commands:
 
 ```bash
-clojure -Ttools install com.github.seancorfield/depstar '{:git/tag "v2.1.250"}' :as depstar
+clojure -Ttools install com.github.seancorfield/depstar '{:git/tag "v2.1.253"}' :as depstar
 # make an uberjar:
 clojure -Tdepstar uberjar :jar MyProject.jar
 # make a thin JAR:
@@ -293,7 +293,7 @@ You can make this shorter by adding `:exec-fn` to your alias with some of the ar
 
 ```clojure
   ;; a new :uberjar alias to build a project-specific JAR file:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -322,7 +322,7 @@ user `deps.edn` file). For example:
   ;; using an alias as a value for :jvm-opts:
   :uberjar
   {:replace-deps
-   {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+   {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:jar "MyProject.jar"
                         :aot true
@@ -356,7 +356,7 @@ pushed, I perform one last commit with the following updates:
 
 ```clj
     ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.250"}}
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
           :exec-fn hf.depstar/jar
           :exec-args {:jar "clj-new.jar" :sync-pom true}}
     :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}
@@ -450,7 +450,7 @@ This expects your Clojars username to be in the `CLOJARS_USERNAME` environment v
 
 This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
 
-Latest stable release: 2.1.250
+Latest stable release: 2.1.253
 
 # License
 

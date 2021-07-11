@@ -1,5 +1,8 @@
 # Changes
 
+* 2.1.253 -- 2021-07-11
+  * Fix #94 by adding `:extra-deps` from `:aliases` to `:deps` used for `pom.xml` synchronization.
+
 * 2.1.250 -- 2021-07-09
   * Add `:tools/usage` and instructions for new CLI `tools` support.
   * Update `clojure.tools.deps.alpha` and use its new `create-basis` function, instead of rolling my own.
