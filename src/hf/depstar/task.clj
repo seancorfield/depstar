@@ -60,6 +60,10 @@
     (when (and (not= :thin jar-type) paths-only)
       (logger/warn ":paths-only is ignored when building an uberjar"))
 
-    [(t/create-basis (cond-> {:aliases aliases}
-                       repro (assoc :user nil)))
-     options]))
+    ;; so that we can rely on :deps in the basis for the
+    ;; sync pom operation, we add in any :extra-deps here:
+    (let [{:keys [resolve-args] :as basis}
+          (t/create-basis (cond-> {:aliases aliases}
+                            repro (assoc :user nil)))]
+      [(update basis :deps merge (:extra-deps resolve-args))
+       options])))
