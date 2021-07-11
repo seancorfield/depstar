@@ -405,7 +405,7 @@
   (println "  :verbose true      -- explain what goes into the JAR file")
   (println "  :version str       -- specify the version (of the group/artifact)"))
 
-(defn- task*
+(defn task*
   "Handling of JAR building as a -X task.
 
   Inputs (all optional, except where noted):

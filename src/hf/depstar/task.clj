@@ -10,7 +10,7 @@
 (comment
   (t/create-basis {})
   (t/create-basis {:aliases [:test-issue-5]})
-  .)
+  )
 
 (defn- preprocess-options
   "Given an options hash map, if any of the values are keywords, look them
