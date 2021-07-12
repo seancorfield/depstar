@@ -1,0 +1,18 @@
+{:cljdoc.doc/tree
+ [["Readme" {:file "README.md"}]
+  ["Changes" {:file "CHANGELOG.md"}]
+  ["Getting Started" {:file "doc/getting-started.md"}
+   ["Building a Library JAR" {:file "doc/library-jar.md"}]
+   ["Building an Application JAR" {:file "doc/application-jar.md"}]
+   ["The Classpath" {:file "doc/classpath.md"}]
+   ["Main Class/Namespace" {:file "doc/main-class.md"}]
+   ["AOT Compilation" {:file "doc/aot.md"}]
+   ["The pom.xml File" {:file "doc/pom-xml.md"}]
+   ["Target Directory" {:file "doc/target.md"}]
+   ["Excluding Files" {:file "doc/excluding.md"}]]
+  ["All the Options" {:file "doc/options.md"}]
+  ["Deployment" {:file "doc/deployment.md"}]
+  ["Continuous Integration" {:file "doc/depstar-ci.md"}]
+  ["CLI Tools Usage" {:file "doc/cli-tools.md"}]
+  ["tools.build Usage" {:file "doc/tools-build.md"}]
+  ["Terminology/Convention" {:file "doc/terminology.md"}]]}
