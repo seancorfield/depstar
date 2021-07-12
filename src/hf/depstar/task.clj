@@ -34,10 +34,13 @@
 
 (defn options-and-basis
   "Given a raw options hash map, apply our defaults and preprocess the
-  options (above), then use the options to calculate the project basis
-  (above), and return a pair of the basis and the updated options."
+  options (above), then use the options to calculate the project basis,
+  if needed, and return the updated options with the :basis added.
+
+  If :basis is provided in the initial options, that is returned as-is
+  instead of calculating a new project basis."
   [options]
-  (let [{:keys [aliases aot group-id jar-type jvm-opts paths-only repro]
+  (let [{:keys [aliases aot basis group-id jar-type jvm-opts paths-only repro]
          :as options}
         (preprocess-options
          (merge {:aliases  []
@@ -63,7 +66,7 @@
     ;; so that we can rely on :deps in the basis for the
     ;; sync pom operation, we add in any :extra-deps here:
     (let [{:keys [resolve-args] :as basis}
-          (t/create-basis (cond-> {:aliases aliases}
-                            repro (assoc :user nil)))]
-      [(update basis :deps merge (:extra-deps resolve-args))
-       options])))
+          (or basis
+              (t/create-basis (cond-> {:aliases aliases}
+                                repro (assoc :user nil))))]
+      (assoc options :basis (update basis :deps merge (:extra-deps resolve-args))))))

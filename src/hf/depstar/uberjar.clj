@@ -409,6 +409,7 @@
   "Handling of JAR building as a -X task.
 
   Inputs (all optional, except where noted):
+  * basis (required)
   * classpath
   * classpath-roots
   * debug-clash
@@ -423,8 +424,7 @@
   * verbose
 
   Outputs (none)."
-  [basis
-   {:keys [classpath classpath-roots debug-clash delete-on-exit exclude
+  [{:keys [basis classpath classpath-roots debug-clash delete-on-exit exclude
            jar jar-type no-pom paths-only pom-file target-dir verbose]
     :as options}]
   (when (not jar)
@@ -505,18 +505,18 @@
    {:success false :reason :no-jar}
 
    :else
-   (let [[basis options] (task/options-and-basis options)
-         options         (pom/task* basis options)
+   (let [options (task/options-and-basis options)
+         options (pom/task* options)
          {:keys [aot-failure] :as options}
          (try
-           (aot/task* basis options)
+           (aot/task* options)
            (catch ExceptionInfo _
              (assoc options :aot-failure true)))]
 
      (if aot-failure
        {:success false :reason :aot-failed}
        (try
-         (task* basis options)
+         (task* options)
          {:success true}
          (catch ExceptionInfo _
            {:success false :reason :copy-failure}))))))

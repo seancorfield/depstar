@@ -91,6 +91,7 @@
 
   Inputs:
   * aot
+  * basis
   * classpath
   * compile-aliases
   * compile-batch (defaults to the size of compile-ns)
@@ -105,10 +106,9 @@
   Outputs:
   * classpath-roots
   "
-  [basis
-   {:keys [aot classpath compile-aliases compile-batch compile-fn compile-ns
-           delete-on-exit jar-type jvm-opts main-class paths-only repro
-           target-dir]
+  [{:keys [aot basis classpath compile-aliases compile-batch compile-fn
+           compile-ns delete-on-exit jar-type jvm-opts main-class
+           paths-only repro target-dir]
     :as options}]
   (let [jvm-opts    (if (sequential? jvm-opts) (vec jvm-opts) [])
 

@@ -122,8 +122,9 @@
 (defn task*
   "Handling of pom.xml as a -X task.
 
-  Inputs (all optional):
+  Inputs (all optional, except :basis):
   * artifact-id (string)  -- <artifactId> to write to pom.xml
+  * basis       (map)     -- the basis to use
   * group-id    (string)  -- <groupId> to write to pom.xml
   * no-pom      (boolean) -- do not read/update group/artifact/version
   * pom-file    (string)  -- override default pom.xml path
@@ -135,8 +136,7 @@
   * artifact-id (string)  -- if not no-pom, <artifactId> from pom.xml
   * group-id    (string)  -- if not no-pom, <groupId> from pom.xml
   * version     (string)  -- if not no-pom, <version> from pom.xml"
-  [basis
-   {:keys [no-pom pom-file sync-pom target-dir]
+  [{:keys [basis no-pom pom-file sync-pom target-dir]
     :as   options}]
   (let [pom-in     (io/file pom-file)
         target-pom (or target-dir (.getParent pom-in) ".")

@@ -1,7 +1,31 @@
 ;; copyright (c) 2020-2021 sean corfield, all rights reserved
 
 (ns hf.depstar
-  "Entry point for clojure -X options."
+  "Entry point for clojure -X and -T options, as well as usage
+  in a tools.build script.
+
+  (ns build
+    (:require [hf.depstar :as d]))
+
+  (-> options-map
+      (d/pom)
+      (d/aot)
+      (d/build))
+
+  where options-map must contain, at a minimum, :jar (output
+  file) and :jar-type (:thin or :uber).
+
+  There are also two high-level tasks that combine the three
+  steps above (and do not require :jar-type):
+
+  (d/jar options-map)
+
+  (d/uberjar options-map)
+
+  If you are using tools.build for creating/syncing pom.xml
+  and/or for compiling Clojure source code, you can use the
+  functions in hf.depstar.api instead, as drop-in replacements
+  for tools.build's API functions for building JAR files."
   (:require [hf.depstar.aot :as aot]
             [hf.depstar.pom :as pom]
             [hf.depstar.task :as task]
@@ -33,15 +57,44 @@
   * :classpath-roots [strs] -- the classpath with the `classes` folder
                                added, for possible use downstream."
   [options]
-  (let [[basis options] (task/options-and-basis options)]
+  (let [options (task/options-and-basis options)]
     (when-not (:target-dir options)
       (throw (ex-info "Standalone AOT compilation requires :target-dir" {})))
-    (aot/task* basis options)))
+    (aot/task* options)))
+
+(defn build
+  "-X entry point for building a thin/uber JAR file.
+
+  Inputs (all optional, except where noted):
+  * basis
+  * classpath
+  * classpath-roots
+  * debug-clash
+  * delete-on-exit
+  * exclude
+  * jar (required)
+  * jar-type (required)
+  * no-pom
+  * paths-only
+  * pom-file
+  * target-dir
+  * verbose
+
+  Outputs (none)."
+  [options]
+  (let [options (task/options-and-basis options)]
+    (when-not (:jar options)
+      (throw (ex-info "JAR building requires :jar for the target file" {})))
+    (when-not (:jar-type options)
+      (throw (ex-info "JAR building requires :jar-type (:thin or :uber)" {})))
+    (uber/task* options)))
 
 (defn jar
-  "Generic entry point for jar invocations.
+  "Generic entry point for jar invocations. This is a complete build process.
+  It will perform AOT (if requested), create/sync `pom.xml` (if requested),
+  and then build a (thin) JAR.
 
-  Can be used with `clojure -X`:
+  Can be used with `clojure -X` or `clojure -T` or in a build script:
 
   In `:aliases`:
 ```clojure
@@ -85,13 +138,15 @@
   * :group-id    str -- if not no-pom, <groupId> from pom.xml
   * :version     str -- if not no-pom, <version> from pom.xml"
   [options]
-  (let [[basis options] (task/options-and-basis options)]
-    (pom/task* basis options)))
+  (let [options (task/options-and-basis options)]
+    (pom/task* options)))
 
 (defn uberjar
-  "Generic entry point for uberjar invocations.
+  "Generic entry point for uberjar invocations. This is a complete build process.
+  It will perform AOT (if requested), create/sync `pom.xml` (if requested),
+  and then build an uber JAR.
 
-  Can be used with `clojure -X`:
+  Can be used with `clojure -X` or `clojure -T` or in a build script:
 
   In `:aliases`:
 ```clojure

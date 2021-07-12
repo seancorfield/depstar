@@ -26,19 +26,22 @@
   [{:keys [class-dir jar-file main ; tools.build.api/jar
            aliases repro] ; our additional options
     :as options}]
-  (impl/task* (t/create-basis (cond-> {}
-                                (seq aliases)
-                                (assoc :aliases aliases)
-                                repro
-                                (assoc :user nil)))
-              (merge (dissoc options :class-dir :jar-file :main)
-                     {:classpath-roots [(resolve-path class-dir)]
+  (impl/task* (merge (dissoc options :class-dir :jar-file :main)
+                     {:basis
+                      (t/create-basis (cond-> {}
+                                        (seq aliases)
+                                        (assoc :aliases aliases)
+                                        repro
+                                        (assoc :user nil)))
+                      :classpath-roots [(resolve-path class-dir)]
                       :jar             (resolve-path jar-file)
                       :main-class      main
                       ;; control options:
                       :jar-type        :thin
                       ;; assume pom.xml is in the class-dir!
-                      :no-pom          true})))
+                      :no-pom          true}))
+  ;; return nil like tools.build.api/jar:
+  nil)
 
 (defn uber
   "Given `:class-dir`, `:uber-file`, and optionally `:basis`
@@ -55,13 +58,15 @@
                                     (assoc :aliases aliases)
                                     repro
                                     (assoc :user nil))))]
-    (impl/task* basis
-                (merge (dissoc options :basis :class-dir :uber-file :main)
-                       {:classpath-roots (conj (:classpath-roots basis)
+    (impl/task* (merge (dissoc options :basis :class-dir :uber-file :main)
+                       {:basis           basis
+                        :classpath-roots (conj (:classpath-roots basis)
                                                (resolve-path class-dir))
                         :jar             (resolve-path uber-file)
                         :main-class      main
                         ;; control options:
                         :jar-type        :uber
                         ;; assume pom.xml is in the class-dir!
-                        :no-pom          true}))))
+                        :no-pom          true})))
+  ;; return nil like tools.build.api/uber:
+  nil)
