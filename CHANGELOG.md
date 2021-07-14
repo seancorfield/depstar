@@ -2,7 +2,7 @@
 
 * 2.1.next in progress
   * Address #87 by adding a new namespace `hf.depstar.api` containing `jar` and `uber` functions which are drop-in replacements for `tools.build.api` versions, but also accept all of the options that `depstar` supports to control the behavior in more detail. In addition, `hf.depstar/build` has been added as a component step to work with the existing `aot` and `pom` functions in that namespace.
-  * Documentation needs a serious reworking at this point!
+  * The documentation is being completely overhauled!
 
 * 2.1.253 -- 2021-07-11
   * Fix #94 by adding `:extra-deps` from `:aliases` to `:deps` used for `pom.xml` synchronization.
