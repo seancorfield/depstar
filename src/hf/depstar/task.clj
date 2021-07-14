@@ -14,13 +14,14 @@
 
 (defn- preprocess-options
   "Given an options hash map, if any of the values are keywords, look them
-  up as alias values from the full basis (including user `deps.edn`).
+  up as alias values from the full basis (including user `deps.edn`) or the
+  basis provided in the options map.
 
   :jar-type is the only option that is expected to have a keyword value
   and it is generally set automatically so we skip the lookup for that."
-  [options]
+  [{:keys [basis] :as options}]
   (let [kw-opts #{:compile-ns :jar-type} ; :compile-ns can be :all
-        aliases (:aliases (t/create-basis {}))]
+        aliases (:aliases (or basis (t/create-basis {})))]
     (reduce-kv (fn [opts k v]
                  (if (and (not (contains? kw-opts k)) (keyword? v))
                    (if (contains? aliases v)
