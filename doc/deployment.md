@@ -76,7 +76,7 @@ pushed, I perform one last commit with the following updates:
 
 ```clj
     ;; override the example :jar alias with a specific one:
-    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
+    :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
           :exec-fn hf.depstar/jar
           :exec-args {:jar "clj-new.jar" :sync-pom true}}
     :deploy {:replace-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}

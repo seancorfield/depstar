@@ -11,7 +11,7 @@
 ;;                {:tag "v0.1.2" :sha "81f05b7"
 ;;                 :exclusions [org.slf4j/slf4j-nop]}
 ;;                com.github.seancorfield/depstar
-;;                {:mvn/version "2.1.next"}}
+;;                {:mvn/version "2.1.267"}}
 ;;         :ns-default build}
 
 (ns build

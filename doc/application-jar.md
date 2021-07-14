@@ -4,7 +4,7 @@ Assuming this alias in your user or project `deps.edn` file:
 
 ```clojure
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
 ```

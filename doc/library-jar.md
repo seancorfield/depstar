@@ -4,7 +4,7 @@ Assuming this alias in your user or project `deps.edn` file:
 
 ```clojure
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
 ```

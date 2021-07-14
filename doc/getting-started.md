@@ -1,6 +1,6 @@
 # Getting Started
 
-> Note: you must have at least version 1.10.1.727 of the Clojure CLI installed! Version 1.10.3.855 is the latest stable version as of `depstar` 2.1.253. See [Clojure Tools Releases](https://clojure.org/releases/tools) for details about the functionality in recent CLI releases.
+> Note: you must have at least version 1.10.1.727 of the Clojure CLI installed! Version 1.10.3.855 is the latest stable version as of `depstar` 2.1.267. See [Clojure Tools Releases](https://clojure.org/releases/tools) for details about the functionality in recent CLI releases.
 
 Add `depstar` via one or more aliases in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
@@ -8,11 +8,11 @@ Add `depstar` via one or more aliases in your project `deps.edn` or user-level `
 {
  :aliases {
   ;; build an uberjar (application) with AOT compilation by default:
-  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
+  :uberjar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
             :exec-fn hf.depstar/uberjar
             :exec-args {:aot true}}
   ;; build a jar (library):
-  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
+  :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.267"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
  }
