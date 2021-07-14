@@ -56,8 +56,6 @@ Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
 clojure -X:jar :jar MyLib.jar
-# or:
-clojure -X:depstar jar :jar MyLib.jar
 ```
 
 For more detail, read [Getting Started](https://cljdoc.org/d/com.github.seancorfield/depstar/CURRENT/doc/getting-started) and the applicable sections of the documentation.

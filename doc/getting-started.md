@@ -15,10 +15,6 @@ Add `depstar` via one or more aliases in your project `deps.edn` or user-level `
   :jar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
         :exec-fn hf.depstar/jar
         :exec-args {}}
-  ;; generic depstar alias, use with jar or uberjar function name:
-  :depstar {:replace-deps {com.github.seancorfield/depstar {:mvn/version "2.1.253"}}
-            :ns-default hf.depstar
-            :exec-args {}}
  }
 }
 ```
@@ -27,8 +23,6 @@ Create an uberjar by invoking `depstar` with the desired jar name:
 
 ```bash
 clojure -X:uberjar :jar MyProject.jar
-# or:
-clojure -X:depstar uberjar :jar MyProject.jar
 ```
 
 An uberjar created by that command can be run as follows:
@@ -43,8 +37,6 @@ Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
 clojure -X:jar :jar MyLib.jar
-# or:
-clojure -X:depstar jar :jar MyLib.jar
 ```
 
 > Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.206) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.

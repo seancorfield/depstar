@@ -47,6 +47,8 @@ With this approach, you use `tools.build` functions for everything except `jar` 
           :jar-file jar-file}))
 ```
 
+Running `clojure -T:build jar` will run the `jar` task defined above using the `:build` alias.
+
 `hf.depstar.api/jar` accepts `:class-dir`, `:jar-file`, and `:main`. It additionally accepts any of `depstar`'s options that can affect building a JAR file, such as `:aliases` (for calculating the project basis), `:exclude`, `:manifest`, `:paths-only`, `:repro` (to exclude consideration of the user `deps.edn` file), `:verbose`, etc.
 
 Similarly for `uber`:
