@@ -1,5 +1,4 @@
-
-## `depstar` and CI Environments
+# `depstar` and CI Environments
 
 If you are using `depstar` in a CI environment, you are probably trying to ensure that you can pre-cache dependencies so they are not downloaded on every run. You can use the `-P` option on the `clojure` CLI script to "prepare" dependencies: it will fetch all the dependencies and compute the classpath but will not run main/exec functions.
 

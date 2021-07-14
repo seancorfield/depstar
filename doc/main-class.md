@@ -1,5 +1,4 @@
-
-## `:main-class`
+# `:main-class`
 
 If you are building an uberjar, the manifest (`META-INF/MANIFEST.MF`) will declare the `Main-Class` (specified by the `:main-class` option, or `clojure.main` if omitted).
 

@@ -1,5 +1,4 @@
-
-## `pom.xml`
+# `pom.xml`
 
 If you are creating a library and intend to deploy it to Clojars or a similar repository, you will need a `pom.xml` file.
 
@@ -36,6 +35,6 @@ clojure -X:uberjar :sync-pom true \
 java -jar MyProject.jar -m project.core
 ```
 
-See the `:main-class` option above if you want `java -jar` to run your main function by default instead of requiring the `-m` option.
+See the [`:main-class`](main-class.md) section if you want `java -jar` to run your main function by default instead of requiring the `-m` option.
 
 You can use the `:pom-file` exec argument to specify a path to the `pom.xml` file if it is not in the current directory.

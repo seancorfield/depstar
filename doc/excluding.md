@@ -1,4 +1,4 @@
-## Excluding Files
+# Excluding Files
 
 By default, the following files are excluded from the output JAR:
 

@@ -1,5 +1,4 @@
-
-## Classpath
+# Classpath
 
 By default, `depstar` computes a classpath from the system and project `deps.edn` files (and, optionally, the user `deps.edn` file) and then walks that classpath to find resources to add to the JAR:
 

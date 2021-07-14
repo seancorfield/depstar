@@ -1,8 +1,8 @@
 # Getting Started
 
-> Note: these instructions assume you have at least version 1.10.1.727 of the Clojure CLI installed. See [Clojure Tools Releases](https://clojure.org/releases/tools) for details about the functionality in recent CLI releases.
+> Note: you must have at least version 1.10.1.727 of the Clojure CLI installed! Version 1.10.3.855 is the latest stable version as of `depstar` 2.1.253. See [Clojure Tools Releases](https://clojure.org/releases/tools) for details about the functionality in recent CLI releases.
 
-Install this tool to an alias in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
+Add `depstar` via one or more aliases in your project `deps.edn` or user-level `deps.edn` (in `~/.clojure/` or `~/.config/clojure/`):
 
 ```clj
 {
@@ -37,7 +37,7 @@ An uberjar created by that command can be run as follows:
 java -cp MyProject.jar clojure.main -m project.core
 ```
 
-If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the sections below for more information about both of those.
+If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the [`:main-class`](main-class.md) and [AOT Compilation](aot.md) sections for more detail.
 
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
@@ -55,14 +55,3 @@ If you want to deploy a library to Clojars (or Maven Central), you're going to a
 For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
 
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
-
-# Releases
-
-This project follows the version scheme MAJOR.MINOR.COMMITS where MAJOR and MINOR provide some relative indication of the size of the change, but do not follow semantic versioning. In general, all changes endeavor to be non-breaking (by moving to new names rather than by breaking existing names). COMMITS is an ever-increasing counter of commits since the beginning of this repository.
-
-Latest stable release: 2.1.253
-
-# License
-
-The use and distribution terms for this software are covered by the
-[Eclipse Public License 2.0](https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html)

@@ -1,5 +1,4 @@
-
-## Target Directory
+# Target Directory
 
 By default, `depstar` updates the `pom.xml` in place, compiles namespaces to a temporary folder, and builds the JAR in the current directory.
 You can specify `:pom-file` if the `pom.xml` file is not in the current directory, and `:jar` can specify a path for the JAR file if you
@@ -14,4 +13,4 @@ You can still specify `:pom-file` to provide a different source `pom.xml` file t
 directory, and you can still specify `:jar` as a path, rather than just a filename, to have `depstar` build the JAR outside the target
 directory.
 
-> Note: the `classes` folder in the target directory is not cleaned out by `depstar` prior to compilation so the JAR file will use whatever is already in that folder if you specify AOT compilation without deleting `classes` first.
+> Note: the `classes` folder in the target directory is not cleaned out by `depstar` prior to compilation so the JAR file will use whatever is already in that folder if you specify AOT compilation without deleting `classes` first. When [using `depstar` with `tools.build`](tools-build.md), you can use the `delete` task to remove the target directory, to ensure a clean work area.
