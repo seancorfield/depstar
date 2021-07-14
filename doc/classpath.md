@@ -4,7 +4,7 @@ By default, `depstar` computes a classpath from the system and project `deps.edn
 
 * For each directory on the classpath, the contents of that directory are copied (recursively) to the output JAR as individual files.
 * If `:jar-type :thin` (via the `hf.depstar/jar` exec-fn), JAR files on the classpath are ignored, otherwise (`:jar-type :uber`, via the `hf.depstar/uberjar` exec-fn), each JAR file on the classpath is expanded and its contents are copied to the output JAR as individual files.
-* Other types of files on the classpath are ignored (a warning is printed unless the file is on the excluded list, see below).
+* Other types of files on the classpath are ignored (a warning is printed unless the file is on the excluded list, see [Exluding Files](excluding.md)).
 
 By default, only the system and project `deps.edn` files are used (as if the `:repro true` option is provided). _This is intended to correspond to the CLI's `-Srepro` option that ignores the user `deps.edn` file._ If the `:repro false` option is provided instead, the user `deps.edn` file is also used.
 

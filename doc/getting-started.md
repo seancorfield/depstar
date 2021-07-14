@@ -39,13 +39,9 @@ Create a (library) jar by invoking `depstar` with the desired jar name:
 clojure -X:jar :jar MyLib.jar
 ```
 
-> TODO: this should move to the library-jar.md page!
-
-> Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.206) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.
-
 > Note: if you have a `user.clj` file on your default classpath -- in any folders that are in `:paths` in your `deps.edn` -- Clojure will attempt to load that at startup, before running `depstar`. In such cases, you will likely need to add `:replace-paths []` along with `:replace-deps` in your aliases for `depstar`.
 
-If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see below.
+If you want to deploy a library to Clojars (or Maven Central), you're going to also need a `pom.xml` file -- see [`pom.xml`](pom-xml.md) for more details.
 For deployment to Clojars, please read the [Clojars Verified Group Names policy](https://github.com/clojars/clojars-web/wiki/Verified-Group-Names).
 
 If you want to see all of the files that are being copied into the JAR file, add `:verbose true` after the JAR filename.
