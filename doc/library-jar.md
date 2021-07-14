@@ -15,7 +15,7 @@ Building a library JAR file can be as simple as:
 clojure -X:jar :jar MyLib.jar
 ```
 
-This will use the project's `deps.edn` file (in the current directory) to calculate the "basis" for the project, and then build a "thin" library JAR file from all of the directories that would be on the classpath by default for the project. In a simple project, that is likely to be just whatever is in `:paths`, which is typically the `src` folder, and optionally the `resources` folder.
+This will use the project's `deps.edn` file (in the current directory) to calculate the "basis" for the project, and then build a "thin" library JAR file from all of the directories and non-`.jar` files that would be on the classpath by default for the project. In a simple project, that is likely to be just whatever is in `:paths`, which is typically the `src` folder, and optionally the `resources` folder.
 
 For a project with `:local/root` or `:git/url` dependencies, the classpath will include those directories as well, and `depstar` will also include those (source) files in the JAR as well. If you plan to publish this library JAR files and those sources are not already available as dependencies for your users, this can be convenient since your library will include them directly. This is not always what you want, so you can specify `:paths-only true` to use only the directories in the `:paths` entry in `deps.edn` instead.
 

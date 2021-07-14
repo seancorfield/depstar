@@ -31,13 +31,15 @@ An uberjar created by that command can be run as follows:
 java -cp MyProject.jar clojure.main -m project.core
 ```
 
-If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See the [`:main-class`](main-class.md) and [AOT Compilation](aot.md) sections for more detail.
+If you want to be able to use `java -jar` to run your uberjar, you'll need to specify the main class (namespace) in the uberjar and you'll probably want to AOT compile your main namespace. See [Building an Application JAR](application-jar.md), and the [`:main-class`](main-class.md) and [AOT Compilation](aot.md) sections for more detail.
 
 Create a (library) jar by invoking `depstar` with the desired jar name:
 
 ```bash
 clojure -X:jar :jar MyLib.jar
 ```
+
+> TODO: this should move to the library-jar.md page!
 
 > Note: `depstar` assumes that directories it finds on the classpath contain the source of your library and `.jar` files are ignored (for an uberjar, everything on the classpath is included). If you have `:local/root` and/or `:git/url` dependencies in your library, `depstar` will see those as directories and will include them in your (library) JAR. You can either use the `:exclude` option to omit such code from your JAR or you can use the `:paths-only true` option (new in 2.0.206) which tells `depstar` to use `:paths` and `:extra-paths` from the project basis (instead of using the classpath). You may well have good reasons for including such dependencies as source code in your library JAR, e.g., those dependencies aren't published somewhere your library's users could depend on.
 
