@@ -9,8 +9,8 @@
 
 (comment
   (t/create-basis {})
-  (t/create-basis {:aliases [:test-issue-5]})
-  )
+  (t/create-basis {:aliases [:test-issue-5]}))
+
 
 (defn- preprocess-options
   "Given an options hash map, if any of the values are keywords, look them
@@ -20,7 +20,11 @@
   and it is generally set automatically so we skip the lookup for that."
   [options]
   (let [kw-opts #{:compile-ns :jar-type} ; :compile-ns can be :all
-        aliases (:aliases (t/create-basis {}))]
+        edn-fn  (juxt :root-edn :user-edn :project-edn)
+        aliases (-> (t/find-edn-maps)
+                    (edn-fn)
+                    (t/merge-edns)
+                    :aliases)]
     (reduce-kv (fn [opts k v]
                  (if (and (not (contains? kw-opts k)) (keyword? v))
                    (if (contains? aliases v)
