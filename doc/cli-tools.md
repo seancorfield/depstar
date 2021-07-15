@@ -15,4 +15,4 @@ clojure -Tdepstar jar :jar MyLib.jar
 * `pom` -- create/sync a `pom.xml`, optionally into a `:target-dir` directory,
 * `build` -- build a JAR file -- either `:jar-type :thin` or `:jar-type :uber` -- from the project and any `:target-dir` directory.
 
-See [Usage with `tools.build`] for more details of all these tasks. See [All the Options](options.md) for the full list of options that these `depstar` commands accept.
+See [Usage with `tools.build`](tools-build.md) for more details of all these tasks. See [All the Options](options.md) for the full list of options that these `depstar` commands accept.
