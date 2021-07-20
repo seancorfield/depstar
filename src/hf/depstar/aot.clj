@@ -5,7 +5,6 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.deps.alpha :as t]
-            [clojure.tools.logging :as logger]
             [clojure.tools.namespace.find :as tnsf]
             [hf.depstar.files :as files])
   (:import (java.io InputStreamReader BufferedReader)
@@ -72,7 +71,7 @@
       ;; Compiling ns ... line and no other stdout so we try
       ;; to mimic that here:
       (doseq [line (line-seq rdr) :when (str/starts-with? line "Compiling ")]
-        (logger/info line "...")))
+        (println line "...")))
     (.waitFor p)
     ;; this may lead to a slightly strange experience where
     ;; all the standard output appears for all the compiles
@@ -83,7 +82,7 @@
       (if (zero? (.exitValue p))
         false ; no AOT failure
         (do
-          (logger/error (str "Compilation failed!"))
+          (println "Compilation failed!")
           true)))))
 
 (defn task*
@@ -148,7 +147,7 @@
                                     c-cp)))
                           :else
                           (when compile-ns
-                            (logger/warn ":compile-ns should be a vector (or :all) -- ignoring")))
+                            (println ":compile-ns should be a vector (or :all) -- ignoring")))
 
         ;; force AOT if compile-ns explicitly requested:
         do-aot      (or aot (seq compile-ns))
@@ -157,7 +156,7 @@
                       (into (or compile-ns []) [main-class])
                       compile-ns)
         _           (when (and aot (empty? compile-ns))
-                      (logger/warn ":aot true but no namespaces to compile -- ignoring"))
+                      (println ":aot true but no namespaces to compile -- ignoring"))
         tmp-c-dir   (when do-aot
                       (if target-dir
                         (let [classes (files/path (str target-dir "/classes"))]

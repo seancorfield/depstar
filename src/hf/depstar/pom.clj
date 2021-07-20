@@ -5,7 +5,6 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.deps.alpha.gen.pom :as pom]
-            [clojure.tools.logging :as logger]
             [hf.depstar.files :as files])
   (:import (java.io File)
            (java.nio.file Files)
@@ -32,17 +31,17 @@
     ;; #56 require GAV when sync-pom used to create pom.xml, if no source pom:
     (if (and new-pom (not (.exists source-pom))
              (not (and group-id artifact-id version)))
-      (logger/warn ":group-id, :artifact-id, and :version are all required"
-                   "when creating a new 'pom.xml' file!")
+      (println ":group-id, :artifact-id, and :version are all required"
+               "when creating a new 'pom.xml' file!")
       (do
         (Files/createDirectories (.getParent (files/path (.getPath target-pom)))
                                  (make-array FileAttribute 0))
-        (logger/info "Synchronizing"
-                     (if (or new-pom
-                             (= (.getCanonicalPath source-pom)
-                                (.getCanonicalPath target-pom)))
-                       (.getName target-pom)
-                       (str (.getName source-pom) " to " target-dir "/pom.xml")))
+        (println "Synchronizing"
+                 (if (or new-pom
+                         (= (.getCanonicalPath source-pom)
+                            (.getCanonicalPath target-pom)))
+                   (.getName target-pom)
+                   (str (.getName source-pom) " to " target-dir "/pom.xml")))
         (pom/sync-pom
          {:basis basis
           :params (cond-> {:target-dir target-dir
@@ -86,12 +85,12 @@
               (and artifact-id artifact-id' (not= artifact-id artifact-id'))
               (and group-id    group-id'    (not= group-id    group-id'))
               (and version     version'     (not= version     version')))
-      (logger/info "Updating pom.xml file to"
-                   (str "{"
-                        (:group-id result) "/"
-                        (:artifact-id result) " "
-                        "{:mvn/version \"" (:version result) "\"}"
-                        "}"))
+      (println "Updating pom.xml file to"
+               (str "{"
+                    (:group-id result) "/"
+                    (:artifact-id result) " "
+                    "{:mvn/version \"" (:version result) "\"}"
+                    "}"))
       (spit pom-out
             (cond-> pom-text
               (and artifact-id artifact-id'

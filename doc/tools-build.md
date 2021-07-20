@@ -6,14 +6,11 @@ To use `depstar` as a library, in your `build.clj` script, your `:build` alias s
 
 ```clojure
   :build {:deps {io.github.clojure/tools.build
-                 {:tag "v0.1.3" :sha "688245e"
-                  :exclusions [org.slf4j/slf4j-nop]}
+                 {:git/tag "v0.1.4" :git/sha "169fef9"}
                 com.github.seancorfield/depstar
                 {:tag "v2.1.267" :sha "1a45f79"}}
           :ns-default build}
 ```
-
-Since `depstar` relies on `tools.deps.alpha` and `tools.logging`, you need to exclude the no-op version of the slf4j logging library from `tools.build` to avoid a conflict.
 
 > Note: the above assumes you have the prerelease version 1.10.3.905 of the Clojure CLI installed! Version 1.10.3.855 is the latest stable version as of `depstar` 2.1.267. See [Source Libs and Builds](https://clojure.org/news/2021/07/09/source-libs-builds) for details about the new functionality in this recent prerelease, which includes support for `:tag`/`:sha` source coordinates. You can find the latest tagged version of `depstar` using this command: `clojure -X:deps find-versions :lib com.github.seancorfield/depstar`
 

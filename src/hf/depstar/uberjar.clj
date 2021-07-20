@@ -4,7 +4,6 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.tools.logging :as logger]
             [hf.depstar.aot :as aot]
             [hf.depstar.files :as files]
             [hf.depstar.pom :as pom]
@@ -90,13 +89,13 @@
   (fn [filename _in _target]
     (let [strategy (clash-strategy filename)]
       (when *debug-clash*
-        (logger/info "Found" filename "in multiple dependencies,"
-                     (case strategy
-                       :merge-edn      "merged as EDN."
-                       :concat-lines   "concatenated it."
-                       :concat-no-dupe "concatenated (if not dupe)."
-                       :log4j2-surgery "merged."
-                       :noop           "ignoring duplicate.")))
+        (println "Found" filename "in multiple dependencies,"
+                 (case strategy
+                   :merge-edn      "merged as EDN."
+                   :concat-lines   "concatenated it."
+                   :concat-no-dupe "concatenated (if not dupe)."
+                   :log4j2-surgery "merged."
+                   :noop           "ignoring duplicate.")))
       strategy)))
 
 (defmethod clash
@@ -350,9 +349,9 @@
                          "artifactId=" artifact-id "\n")
         maven-dir   (str "META-INF/maven/" group-id "/" artifact-id "/")]
     (when *verbose* (println ""))
-    (logger/info "Processing pom.xml for"
-                 (str "{" group-id "/" artifact-id
-                      " {:mvn/version \"" version "\"}}"))
+    (println "Processing pom.xml for"
+             (str "{" group-id "/" artifact-id
+                  " {:mvn/version \"" version "\"}}"))
     (with-open [is (io/input-stream (.getBytes properties))]
       (when *verbose*
         (println (str "\nGenerating " maven-dir "pom.properties:\n"))
@@ -463,7 +462,7 @@
       (let [tmp (.getPath zfs "/" (make-array String 0))]
         (reset! errors 0)
         (reset! multi-release? false)
-        (logger/info "Building" (name jar-type) "jar:" jar)
+        (println "Building" (name jar-type) "jar:" jar)
         (binding [*debug* (env-prop "debug")
                   *debug-clash* debug-clash
                   *delete-on-exit* delete-on-exit
@@ -534,7 +533,7 @@
 
   More detail about success and failure is printed to stdout."
   [options]
-  (logger/warn "DEPRECATED: hf.depstar.uberjar/run* -- use hf.depstar.uberjar/build-jar instead.")
+  (println "DEPRECATED: hf.depstar.uberjar/run* -- use hf.depstar.uberjar/build-jar instead.")
   (build-jar options))
 
 (defn ^:no-doc build-jar-as-exec
@@ -567,14 +566,14 @@
         (case (:reason result)
           :help         (print-help)
           :no-jar       (print-help)
-          :aot-failed   (logger/error "AOT FAILED") ;nil ; details already printed
-          :copy-failure (logger/error "Completed with errors!"))
+          :aot-failed   (println "AOT FAILED") ;nil ; details already printed
+          :copy-failure (println "Completed with errors!"))
         (System/exit 1)))))
 
 (defn ^:no-doc run
   "Deprecated entry point for uberjar invocations via `-X`."
   [options]
-  (logger/warn "DEPRECATED: hf.depstar.uberjar/run -- use hf.depstar/uberjar instead.")
+  (println "DEPRECATED: hf.depstar.uberjar/run -- use hf.depstar/uberjar instead.")
   (build-jar-as-main options))
 
 (defn ^:no-doc parse-args
@@ -588,10 +587,10 @@
                            (and (contains? new-arg :jar)
                                 (contains? opts :jar))
                            (do
-                             (logger/warn "Multiple JAR files specified:"
-                                          (:jar opts) "and" (:jar new-arg))
-                             (logger/warn "Ignoring" (:jar opts)
-                                          "and using" (:jar new-arg) "\n")
+                             (println "Multiple JAR files specified:"
+                                      (:jar opts) "and" (:jar new-arg))
+                             (println "Ignoring" (:jar opts)
+                                      "and using" (:jar new-arg) "\n")
                              (merge opts new-arg))
                            :else
                            (merge opts new-arg)))]
@@ -611,7 +610,7 @@
                 ("-X" "--exclude")   [{:exclude (fnext args)} (nnext args)]
                 (if (= \- (ffirst args))
                   (do
-                    (logger/warn "Unknown option" (first args) "ignored!")
+                    (println "Unknown option" (first args) "ignored!")
                     [{} (next args)])
                   [{:jar (first args)} (next args)]))]
           (recur (merge-args opts arg) more))
@@ -620,7 +619,7 @@
 (defn ^:no-doc -main
   "Deprecated entry point for uberjar invocation via -M."
   [& args]
-  (logger/warn "DEPRECATED: -M -m hf.depstar.uberjar -- use -X hf.depstar/uberjar instead.")
+  (println "DEPRECATED: -M -m hf.depstar.uberjar -- use -X hf.depstar/uberjar instead.")
   (build-jar-as-main (assoc (parse-args args) :jar-type :uber)))
 
 (comment

@@ -1,6 +1,7 @@
 # Changes
 
 * 2.1.next in progress
+  * Strip out logging and use `println` instead (this makes it easier to play with other tools) -- #98.
   * Do not calculate a basis just to get the aliases -- only read and merge the EDNs -- #97.
   * Fix bad link in docs #95.
 

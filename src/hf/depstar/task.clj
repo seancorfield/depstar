@@ -2,8 +2,7 @@
 
 (ns ^:no-doc hf.depstar.task
   "Utilities to allow parts of depstar to run as -X tasks."
-  (:require [clojure.tools.deps.alpha :as t]
-            [clojure.tools.logging :as logger]))
+  (:require [clojure.tools.deps.alpha :as t]))
 
 (set! *warn-on-reflection* true)
 
@@ -30,7 +29,7 @@
                    (if (contains? aliases v)
                      (assoc opts k (get aliases v))
                      (do
-                       (logger/warn k "has value" v "which is an unknown alias")
+                       (println k "has value" v "which is an unknown alias")
                        opts))
                    opts))
                options
@@ -59,13 +58,13 @@
                     (update :target-dir #(some-> % str)))))]
 
     (when (and aot (= :thin jar-type))
-      (logger/warn ":aot is not recommended for a 'thin' JAR!"))
+      (println ":aot is not recommended for a 'thin' JAR!"))
     (when (and group-id (not (re-find #"\." (str group-id))))
-      (logger/warn ":group-id should probably be a reverse domain name, not just" group-id))
+      (println ":group-id should probably be a reverse domain name, not just" group-id))
     (when (and jvm-opts (not (sequential? jvm-opts)))
-      (logger/warn ":jvm-opts should be a vector -- ignoring" jvm-opts))
+      (println ":jvm-opts should be a vector -- ignoring" jvm-opts))
     (when (and (not= :thin jar-type) paths-only)
-      (logger/warn ":paths-only is ignored when building an uberjar"))
+      (println ":paths-only is ignored when building an uberjar"))
 
     ;; so that we can rely on :deps in the basis for the
     ;; sync pom operation, we add in any :extra-deps here:

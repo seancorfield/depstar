@@ -200,14 +200,16 @@
         res (atom nil)]
     (is (re-find
          #"print-err: please.print.me!"
-         (with-out-str
-           (reset! res
-                   (sut/build-jar {:jar-type :uber :jar (str jar)
-                                   :aot true :main-class 'please.print.me!
-                                   :compile-fn 'hf.depstar-test/print-err
-                                   :aliases [:test]
-                                   :pom-file (str (File/createTempFile "pom" ".xml"))
-                                   :group-id "depstar.issue" :artifact-id "bug" :version "63"})))))
+         (doto
+          (with-out-str
+            (reset! res
+                    (sut/build-jar {:jar-type :uber :jar (str jar)
+                                    :aot true :main-class 'please.print.me!
+                                    :compile-fn 'hf.depstar-test/print-err
+                                    :aliases [:test]
+                                    :pom-file (str (File/createTempFile "pom" ".xml"))
+                                    :group-id "depstar.issue" :artifact-id "bug" :version "63"})))
+           print)))
     (is (= {:success true} @res))))
 
 (deftest issue-64-jvm-opts
@@ -216,25 +218,29 @@
         res (atom nil)]
     (is (re-find
          #"We are direct linking!"
-         (with-out-str
-           (reset! res
-                   (sut/build-jar {:jar-type :uber :jar (str jar)
-                                   :aot true :main-class 'issue-64
+         (doto
+          (with-out-str
+            (reset! res
+                    (sut/build-jar {:jar-type :uber :jar (str jar)
+                                    :aot true :main-class 'issue-64
                                    ;; this tests lookup via alias
-                                   :jvm-opts :direct-linking
-                                   :pom-file (str (File/createTempFile "pom" ".xml"))
-                                   :group-id "depstar.issue" :artifact-id "bug" :version "64"
-                                   :aliases [:test-issue-64]})))))
+                                    :jvm-opts :direct-linking
+                                    :pom-file (str (File/createTempFile "pom" ".xml"))
+                                    :group-id "depstar.issue" :artifact-id "bug" :version "64"
+                                    :aliases [:test-issue-64]})))
+           print)))
     (is (= {:success true} @res))
     (is (not (re-find
               #"We are direct linking!"
-              (with-out-str
-                (reset! res
-                        (sut/build-jar {:jar-type :uber :jar (str jar)
-                                        :aot true :main-class 'issue-64
-                                        :pom-file (str (File/createTempFile "pom" ".xml"))
-                                        :group-id "depstar.issue" :artifact-id "bug" :version "64"
-                                        :aliases [:test-issue-64]}))))))
+              (doto
+               (with-out-str
+                 (reset! res
+                         (sut/build-jar {:jar-type :uber :jar (str jar)
+                                         :aot true :main-class 'issue-64
+                                         :pom-file (str (File/createTempFile "pom" ".xml"))
+                                         :group-id "depstar.issue" :artifact-id "bug" :version "64"
+                                         :aliases [:test-issue-64]})))
+                print))))
     (is (= {:success true} @res))))
 
 (deftest issue-65
@@ -275,15 +281,17 @@
         res (atom nil)]
     (is (re-find
          #"print-err: please.print.me!"
-         (with-out-str
-           (reset! res
-                   (sut/build-jar {:jar-type :uber :jar (str jar)
-                                   :aot true :main-class 'please.print.me!
-                                   :compile-fn 'hf.depstar-test/print-err
+         (doto
+          (with-out-str
+            (reset! res
+                    (sut/build-jar {:jar-type :uber :jar (str jar)
+                                    :aot true :main-class 'please.print.me!
+                                    :compile-fn 'hf.depstar-test/print-err
                                    ;; without :compile-aliases this test would fail:
-                                   :aliases [:test-issue-66] :compile-aliases [:test]
-                                   :pom-file (str (File/createTempFile "pom" ".xml"))
-                                   :group-id "depstar.issue" :artifact-id "bug" :version "75"})))))
+                                    :aliases [:test-issue-66] :compile-aliases [:test]
+                                    :pom-file (str (File/createTempFile "pom" ".xml"))
+                                    :group-id "depstar.issue" :artifact-id "bug" :version "75"})))
+           print)))
     (is (= {:success true} @res))
     ;; make sure :aliases actually got included:
     (let [contents (read-jar jar #".*lang[-_]utils.*")]
